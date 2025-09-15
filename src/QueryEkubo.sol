@@ -745,48 +745,81 @@ contract QueryEkubo {
     function queryEkuboTicksSuperCompactByTokens(
         address token0,
         address token1,
-        bytes32 config
+        bytes32 config,
+        uint256 interation
     ) public view returns (bytes memory) {
         PoolKey memory poolkey = PoolKey({
             token0: token0,
             token1: token1,
             config: Config.wrap(config)
         });
-        return queryEkuboTicksSuperCompactByPoolKey(poolkey);
+        return queryEkuboTicksSuperCompactByPoolKey(poolkey, interation);
     }
 
     function queryEkuboTicksSuperCompactByPoolKey(
-        PoolKey memory poolKey
+        PoolKey memory poolKey,
+        uint256 interation
     ) public view returns (bytes memory) {
-        int32 tickSpacing = int32(poolKey.tickSpacing());
+        uint32 tickSpacing = poolKey.tickSpacing();
         require(tickSpacing > 0, "Invalid tickSpacing");
+
         bytes32 poolId = poolKey.toPoolId();
-        int32 leftMost = (MIN_TICK / tickSpacing) * tickSpacing;
-        int32 rightMost = (MAX_TICK / tickSpacing) * tickSpacing;
+
+        int32 currTick;
+        (, currTick, ) = core.poolState(poolId);
+        int32 currTick2 = currTick;
+        uint256 threshold = interation / 2;
+
         bytes memory tickInfo;
-        int32 index = leftMost;
-        bool isInitialized;
-        while (true) {
-            (index, isInitialized) = core.nextInitializedTick(
+        while (currTick <= MAX_TICK && interation > threshold) {
+            (int128 liquidityDelta,) = poolTicks(
                 poolId,
-                index,
-                uint32(tickSpacing),
+                currTick
+            );
+
+            int256 data = int256(uint256(int256(currTick)) << 128) +
+                (int256(liquidityDelta) &
+                    0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
+            tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+
+            int32 nextTick;
+            (nextTick,) = core.nextInitializedTick(
+                poolId,
+                currTick,
+                tickSpacing,
                 0
             );
-            if (index >= rightMost) {
+            if (nextTick == currTick) {
                 break;
             }
-            if (isInitialized) {
-                (int128 liquidityDelta, uint128 liquidityNet) = poolTicks(
-                    poolId,
-                    index
-                );
 
-                int256 data = int256(uint256(int256(index)) << 128) +
-                    (int256(liquidityDelta) &
-                        0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
-                tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+            currTick = nextTick;
+            interation--;
+        }
+
+        while (currTick2 >= MIN_TICK && interation > 0) {
+            (int128 liquidityDelta,) = poolTicks(
+                poolId,
+                currTick2
+            );
+
+            int256 data = int256(uint256(int256(currTick2)) << 128) +
+                (int256(liquidityDelta) &
+                    0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
+            tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));  
+
+            (int32 prevTick,) = core.prevInitializedTick(
+                poolId,
+                currTick2,
+                tickSpacing,
+                0
+            );
+            if (prevTick == currTick2) {
+                break;
             }
+
+            currTick2 = prevTick;
+            interation--;
         }
 
         return tickInfo;
