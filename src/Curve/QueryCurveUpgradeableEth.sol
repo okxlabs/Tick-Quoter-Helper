@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: MIT
-pragma solidity 0.8.17;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.20;
 
 import {
     QueryCurveUpgradeableV2,
@@ -19,6 +19,7 @@ interface ICurveMainBaseRegistry {
 
 interface IRai {
     function redemption_price_snap() external view returns (address);
+
     function snappedRedemptionPrice() external view returns (uint256);
 }
 
@@ -48,6 +49,7 @@ contract QueryCurveUpgradeableEth is QueryCurveUpgradeableV2 {
         address[10] memory handlers = ICurveMetaRegister(meta_register()).get_registry_handlers_from_pool(pool);
 
         if (!is_meta && 0x46a8a9CF4Fc8e99EC3A14558ACABC1D93A27de68 == handlers[0]) {
+            // 兼容main registry里面的lending pool
             return ICurveMainBaseRegistry(0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5).get_underlying_balances(pool);
         } else {
             return ICurveMetaRegister(meta_register()).get_balances(pool);
@@ -61,10 +63,10 @@ contract QueryCurveUpgradeableEth is QueryCurveUpgradeableV2 {
         ) {
             return ICurveMetaRegister(meta_register()).get_coins(pool);
         }
-
         bool is_meta = ICurveMetaRegister(meta_register()).is_meta(pool);
         address[10] memory handlers = ICurveMetaRegister(meta_register()).get_registry_handlers_from_pool(pool);
         if (!is_meta && 0x46a8a9CF4Fc8e99EC3A14558ACABC1D93A27de68 == handlers[0]) {
+            // 兼容main registry里面的lending pool
             return ICurveMainBaseRegistry(0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5).get_underlying_coins(pool);
         } else {
             return ICurveMetaRegister(meta_register()).get_coins(pool);
@@ -83,6 +85,7 @@ contract QueryCurveUpgradeableEth is QueryCurveUpgradeableV2 {
             bool is_meta = ICurveMetaRegister(meta_register()).is_meta(pool);
             address[10] memory handlers = ICurveMetaRegister(meta_register()).get_registry_handlers_from_pool(pool);
             if (!is_meta && 0x46a8a9CF4Fc8e99EC3A14558ACABC1D93A27de68 == handlers[0]) {
+                // 兼容main registry里面的lending pool
                 tokens = ICurveMainBaseRegistry(0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5).get_underlying_coins(pool);
             } else {
                 tokens = ICurveMetaRegister(meta_register()).get_coins(pool);
@@ -118,7 +121,7 @@ contract QueryCurveUpgradeableEth is QueryCurveUpgradeableV2 {
             uint256[] memory price_scale
         )
     {
-        //params[0] 1-v1  2-v2  3-NG  4-CurveTwocryptoOptimized
+        //params[0] 1-v1  2-v2  3-NG
         name = 1;
         gamma = 0;
         D = 0;
@@ -132,11 +135,7 @@ contract QueryCurveUpgradeableEth is QueryCurveUpgradeableV2 {
         price_scale = new uint256[](n - 1);
         try ICurveV2Pool(pool).gamma() returns (uint256 result0) {
             gamma = result0;
-            try ICurveV2Pool(pool).last_prices_timestamp() returns (uint256) {
-                name = 2;
-            } catch {
-                name = 4;
-            }
+            name = 2;
             D = ICurveV2Pool(pool).D();
             if (n > 2) {
                 for (uint256 i = 0; i < n - 1; i++) {

@@ -1,37 +1,51 @@
-// SPDX-License-Identifier: MIT
-pragma solidity 0.8.17;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.20;
 
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 interface ICurveMetaRegister {
     function get_balances(address _pool) external view returns (uint256[8] memory);
+
     function get_underlying_balances(address _pool) external view returns (uint256[8] memory);
+
     function get_coins(address _pool) external view returns (address[8] memory);
+
     function get_underlying_coins(address _pool) external view returns (address[8] memory);
+
     function is_meta(address _pool) external view returns (bool);
+
     function get_n_coins(address _pool) external view returns (uint256);
+
     function get_registry_handlers_from_pool(address _pool) external view returns (address[10] memory);
 }
 
 interface ICurveV2Pool {
     function gamma() external view returns (uint256);
+
     function D() external view returns (uint256);
+
     function price_scale(uint256 k) external view returns (uint256);
+
     function fee_gamma() external view returns (uint256);
+
     function mid_fee() external view returns (uint256);
+
     function out_fee() external view returns (uint256);
-    function last_prices_timestamp() external view returns (uint256);
 }
 
 interface ICurveNGPool {
     function offpeg_fee_multiplier() external view returns (uint256);
+
     function stored_rates() external view returns (uint256[] memory);
 }
 
 interface ICurvePool {
     function A() external view returns (uint256);
+
     function fee() external view returns (uint256);
+
     function price_scale() external view returns (uint256);
+
     function get_virtual_price() external view returns (uint256);
 }
 
@@ -59,6 +73,7 @@ contract QueryCurveUpgradeable is UUPSUpgradeable {
 
     function initialize(address _owner) public initializer onlyProxy {
         owner = _owner;
+        // 这里之所以再设置一遍是因为proxy需要，否则proxy里面这个属性就是0x0
         address_provider = 0x5ffe7FB82894076ECB99A30D6A32e969e6e35E98;
     }
 

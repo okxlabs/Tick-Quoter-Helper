@@ -6,7 +6,7 @@ import "forge-std/console2.sol";
 import "forge-std/test.sol";
 import {QueryData} from "../src/Quote.sol";
 
-contract UniV4QuoterTest is Test{
+contract UniV4QuoterTest is Test {
     QueryData quoter = QueryData(0x8F8Bd31d1B9e8E15c0E36dC5b2645cfE4b5713BA);
     // address stateView = 0x7fFE42C4a5DEeA5b0feC41C94C136Cf115597227;
     // address positionManager = 0xbD216513d74C8cf14cf4747E6AaA6420FF64ee9e;
@@ -27,7 +27,7 @@ contract UniV4QuoterTest is Test{
         // QueryData.PoolKey memory key = QueryData.PoolKey({
         //     currency0: QueryData.Currency.wrap(address(0)), // ETH
         //     currency1: QueryData.Currency.wrap(0xdAC17F958D2ee523a2206206994597C13D831ec7), // USDT
-        //     fee: 500, 
+        //     fee: 500,
         //     tickSpacing: 10,
         //     hooks: IHooks(address(0))
         // });
