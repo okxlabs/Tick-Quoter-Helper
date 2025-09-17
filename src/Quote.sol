@@ -18,6 +18,7 @@ import "./extLib/QueryHorizonTicksSuperCompact.sol";
 import "./extLib/QueryIzumiSuperCompact.sol";
 import "./extLib/QueryUniv4TicksSuperCompact.sol";
 import "./extLib/QueryZoraTicksSuperCompact.sol";
+import "./extLib/QueryEkuboTicksSuperCompact.sol";
 /// @title DexNativeRouter
 /// @notice Entrance of trading native token in web3-dex
 
@@ -109,6 +110,14 @@ contract QueryData {
     function queryZoraTicksSuperCompact(address coin, uint256 len) public view returns (bytes memory) {
         return
             QueryZoraTicksSuperCompact.queryZoraTicksSuperCompact(coin, len, POOL_MANAGER, STATE_VIEW, POSITION_MANAGER);
+    }
+
+    function queryEkuboTicksSuperCompact(QueryEkuboTicksSuperCompact.PoolKey memory poolKey, uint256 len)
+        public
+        view
+        returns (bytes memory)
+    {
+        return QueryEkuboTicksSuperCompact.queryEkuboTicksSuperCompact(poolKey, len);
     }
 
     // General function for all v4 pools

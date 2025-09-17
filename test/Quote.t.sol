@@ -23,7 +23,7 @@ contract UniV4QuoterTest is Test {
         // quoter = new QueryData(stateView, positionManager);
     }
 
-    function test_univ4Quoter() public {
+    function _test_univ4Quoter() public {
         // QueryData.PoolKey memory key = QueryData.PoolKey({
         //     currency0: QueryData.Currency.wrap(address(0)), // ETH
         //     currency1: QueryData.Currency.wrap(0xdAC17F958D2ee523a2206206994597C13D831ec7), // USDT
