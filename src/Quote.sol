@@ -18,6 +18,7 @@ import "./extLib/QueryHorizonTicksSuperCompact.sol";
 import "./extLib/QueryIzumiSuperCompact.sol";
 import "./extLib/QueryUniv4TicksSuperCompact.sol";
 import "./extLib/QueryZoraTicksSuperCompact.sol";
+import "./extLib/QueryPancakeInfinityLBReserveSuperCompact.sol";
 /// @title DexNativeRouter
 /// @notice Entrance of trading native token in web3-dex
 
@@ -103,6 +104,12 @@ contract QueryData {
     function queryPancakeInfinityTicksSuperCompact(bytes32 poolId, uint256 len) public view returns (bytes memory) {
         return QueryUniv4TicksSuperCompact.queryPancakeInfinityTicksSuperCompact(
             poolId, len, POOL_MANAGER, STATE_VIEW, POSITION_MANAGER
+        );
+    }
+
+    function queryPancakeInfinityLBReserveSuperCompact(bytes32 poolId) public view returns (uint256 totalReserveX, uint256 totalReserveY) {
+        return QueryPancakeInfinityLBReserveSuperCompact.queryPancakeInfinityLBReserve(
+            poolId
         );
     }
 
