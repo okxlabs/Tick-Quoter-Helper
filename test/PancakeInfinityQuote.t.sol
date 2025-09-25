@@ -49,7 +49,8 @@ contract PancakeInfinityQuoterTest is Test {
         vm.createSelectFork(vm.envString("BSC_RPC_URL"));
 
         // Deploy new QueryData contract
-        quoter = new QueryData(STATE_VIEW, POSITION_MANAGER, POOL_MANAGER);
+        quoter = new QueryData();
+        quoter.initialize();
     }
 
     // Basic test to check if we can interact with the contracts

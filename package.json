@@ -1,0 +1,28 @@
+{
+  "name": "tick-quoter-helper",
+  "version": "1.0.0",
+  "description": "Upgradeable QueryData contract for DEX tick querying",
+  "scripts": {
+    "deploy": "hardhat run scripts/deploy_quote_proxy.js",
+    "upgrade": "hardhat run scripts/upgrade_quote_proxy.js",
+    "compile": "hardhat compile",
+    "test": "hardhat test"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^2.1.0",
+    "@nomicfoundation/hardhat-ethers": "^3.1.0",
+    "@nomicfoundation/hardhat-network-helpers": "^1.1.0",
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@nomicfoundation/hardhat-verify": "^2.1.1",
+    "@openzeppelin/hardhat-upgrades": "^2.4.3",
+    "@typechain/ethers-v6": "^0.5.1",
+    "@typechain/hardhat": "^9.1.0",
+    "@types/mocha": "^10.0.10",
+    "chai": "^4.5.0",
+    "hardhat": "^2.19.4",
+    "ts-node": "^10.9.2"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts-upgradeable": "^4.9.5"
+  }
+}
