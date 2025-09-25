@@ -13,13 +13,8 @@ import "../interface/IZora.sol";
 import "../interface/IZumiPool.sol";
 
 library QueryZoraTicksSuperCompact {
-    int24 internal constant MIN_TICK_MINUS_1 = -887_272 - 1;
-    int24 internal constant MAX_TICK_PLUS_1 = 887_272 + 1;
-    bytes32 public constant POOLS_SLOT = bytes32(uint256(6));
-    address public constant PANCAKE_INFINITY_CLPOOLMANAGER = 0xa0FfB9c1CE1Fe56963B0321B32E7A0302114058b;
-    address public constant PANCAKE_INFINITY_POSITION_MANAGER = 0x55f4c8abA71A1e923edC303eb4fEfF14608cC226;
-    uint256 internal constant OFFSET_TICK_SPACING = 16;
-
+    bytes32 internal constant POOLS_SLOT = bytes32(uint256(6));
+    
     struct SuperVar {
         int24 tickSpacing;
         int24 currTick;
@@ -34,9 +29,7 @@ library QueryZoraTicksSuperCompact {
     function queryZoraTicksSuperCompact(
         address coin,
         uint256 len,
-        address POOL_MANAGER,
-        address STATE_VIEW,
-        address POSITION_MANAGER
+        address STATE_VIEW
     ) public view returns (bytes memory) {
         SuperVar memory tmp;
         IZoraCoin.PoolKey memory poolkey = IZoraCoin(coin).getPoolKey();
@@ -137,7 +130,7 @@ library QueryZoraTicksSuperCompact {
     }
 
     // Specifically for Zora
-    function getPoolKeyOfZora(address coin, address POOL_MANAGER, address STATE_VIEW, address POSITION_MANAGER)
+    function getPoolKeyOfZora(address coin)
         public
         view
         returns (IZoraCoin.PoolKey memory)
@@ -147,7 +140,7 @@ library QueryZoraTicksSuperCompact {
     }
 
     // Specifically for Zora
-    function getSlot0OfZora(address coin, address POOL_MANAGER, address STATE_VIEW, address POSITION_MANAGER)
+    function getSlot0OfZora(address coin, address POOL_MANAGER)
         public
         view
         returns (int256 liquidity, uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee)

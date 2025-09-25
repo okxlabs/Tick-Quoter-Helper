@@ -1,0 +1,67 @@
+require("@nomicfoundation/hardhat-toolbox");
+require("@openzeppelin/hardhat-upgrades");
+
+/** @type import('hardhat/config').HardhatUserConfig */
+module.exports = {
+  solidity: {
+    version: "0.8.17",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200
+      },
+      viaIR: true
+    }
+  },
+  paths: {
+    sources: "./src",
+    tests: "./test",
+    cache: "./cache",
+    artifacts: "./artifacts"
+  },
+  networks: {
+    hardhat: {
+      // 本地测试网络
+    },
+    base: {
+      url: "https://base.llamarpc.com",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 8453
+    },
+    bsc: {
+      url: "https://binance.llamarpc.com",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 56
+    },
+    ethereum: {
+      url: "https://eth.blockrazor.xyz",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 1
+    },
+    arbitrum: {
+      url: "https://arbitrum.llamarpc.com",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 42161
+    },
+    optimism: {
+      url: "https://optimism.llamarpc.com",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 10
+    },
+    polygon: {
+      url: "https://polygon.llamarpc.com",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 137
+    }
+  },
+  etherscan: {
+    apiKey: {
+      base: process.env.BASESCAN_API_KEY || "",
+      bsc: process.env.BSCSCAN_API_KEY || "",
+      mainnet: process.env.ETHERSCAN_API_KEY || "",
+      arbitrumOne: process.env.ARBISCAN_API_KEY || "",
+      optimisticEthereum: process.env.OPTIMISM_API_KEY || "",
+      polygon: process.env.POLYGONSCAN_API_KEY || ""
+    }
+  }
+};

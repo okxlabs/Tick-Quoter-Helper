@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+
 import "./interface/IAlgebraPool.sol";
 import "./interface/ICLPoolManager.sol";
 import "./interface/IHooks.sol";
@@ -19,25 +21,15 @@ import "./extLib/QueryIzumiSuperCompact.sol";
 import "./extLib/QueryUniv4TicksSuperCompact.sol";
 import "./extLib/QueryZoraTicksSuperCompact.sol";
 import "./extLib/QueryPancakeInfinityLBReserveSuperCompact.sol";
-/// @title DexNativeRouter
-/// @notice Entrance of trading native token in web3-dex
 
-contract QueryData {
-    address public immutable POOL_MANAGER;
-    address public immutable STATE_VIEW;
-    address public immutable POSITION_MANAGER;
+contract QueryData is OwnableUpgradeable {
+    // Core contract addresses (Base network)
+    address public constant POOL_MANAGER = 0x498581fF718922c3f8e6A244956aF099B2652b2b;
+    address public constant STATE_VIEW = 0xA3c0c9b65baD0b08107Aa264b0f3dB444b867A71;
+    address public constant POSITION_MANAGER = 0x7C5f5A4bBd8fD63184577525326123B519429bDc;
 
-    int24 internal constant MIN_TICK_MINUS_1 = -887_272 - 1;
-    int24 internal constant MAX_TICK_PLUS_1 = 887_272 + 1;
-    bytes32 public constant POOLS_SLOT = bytes32(uint256(6));
-    address public constant PANCAKE_INFINITY_CLPOOLMANAGER = 0xa0FfB9c1CE1Fe56963B0321B32E7A0302114058b;
-    address public constant PANCAKE_INFINITY_POSITION_MANAGER = 0x55f4c8abA71A1e923edC303eb4fEfF14608cC226;
-    uint256 internal constant OFFSET_TICK_SPACING = 16;
-
-    constructor(address stateView, address positionManager, address poolManager) {
-        STATE_VIEW = stateView;
-        POSITION_MANAGER = positionManager;
-        POOL_MANAGER = poolManager;
+    function initialize() public initializer {
+        __Ownable_init();
     }
 
     type Currency is address;
@@ -97,13 +89,13 @@ contract QueryData {
 
     function queryUniv4TicksSuperCompact(bytes32 poolId, uint256 len) public view returns (bytes memory) {
         return QueryUniv4TicksSuperCompact.queryUniv4TicksSuperCompact(
-            poolId, len, POOL_MANAGER, STATE_VIEW, POSITION_MANAGER
+            poolId, len, STATE_VIEW, POSITION_MANAGER
         );
     }
 
     function queryPancakeInfinityTicksSuperCompact(bytes32 poolId, uint256 len) public view returns (bytes memory) {
         return QueryUniv4TicksSuperCompact.queryPancakeInfinityTicksSuperCompact(
-            poolId, len, POOL_MANAGER, STATE_VIEW, POSITION_MANAGER
+            poolId, len
         );
     }
 
@@ -114,8 +106,7 @@ contract QueryData {
     }
 
     function queryZoraTicksSuperCompact(address coin, uint256 len) public view returns (bytes memory) {
-        return
-            QueryZoraTicksSuperCompact.queryZoraTicksSuperCompact(coin, len, POOL_MANAGER, STATE_VIEW, POSITION_MANAGER);
+        return QueryZoraTicksSuperCompact.queryZoraTicksSuperCompact(coin, len, STATE_VIEW);
     }
 
     // General function for all v4 pools
@@ -125,7 +116,7 @@ contract QueryData {
 
     // Specifically for Zora
     function getPoolKeyOfZora(address coin) public view returns (IZoraCoin.PoolKey memory) {
-        return QueryZoraTicksSuperCompact.getPoolKeyOfZora(coin, POOL_MANAGER, STATE_VIEW, POSITION_MANAGER);
+        return QueryZoraTicksSuperCompact.getPoolKeyOfZora(coin);
     }
 
     // Specifically for Zora
@@ -134,6 +125,6 @@ contract QueryData {
         view
         returns (int256 liquidity, uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee)
     {
-        return QueryZoraTicksSuperCompact.getSlot0OfZora(coin, POOL_MANAGER, STATE_VIEW, POSITION_MANAGER);
+        return QueryZoraTicksSuperCompact.getSlot0OfZora(coin, POOL_MANAGER);
     }
 }

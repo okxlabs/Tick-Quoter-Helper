@@ -13,10 +13,6 @@ import "../interface/IZora.sol";
 import "../interface/IZumiPool.sol";
 
 library QueryUniv4TicksSuperCompact {
-    int24 internal constant MIN_TICK_MINUS_1 = -887_272 - 1;
-    int24 internal constant MAX_TICK_PLUS_1 = 887_272 + 1;
-    bytes32 public constant POOLS_SLOT = bytes32(uint256(6));
-
     address public constant PANCAKE_INFINITY_CLPOOLMANAGER = 0xa0FfB9c1CE1Fe56963B0321B32E7A0302114058b;
     address public constant PANCAKE_INFINITY_POSITION_MANAGER = 0x55f4c8abA71A1e923edC303eb4fEfF14608cC226;
     uint256 internal constant OFFSET_TICK_SPACING = 16;
@@ -41,7 +37,6 @@ library QueryUniv4TicksSuperCompact {
     function queryUniv4TicksSuperCompact(
         bytes32 poolId,
         uint256 len,
-        address POOL_MANAGER,
         address STATE_VIEW,
         address POSITION_MANAGER
     ) public view returns (bytes memory) {
@@ -137,10 +132,7 @@ library QueryUniv4TicksSuperCompact {
 
     function queryPancakeInfinityTicksSuperCompact(
         bytes32 poolId,
-        uint256 len,
-        address POOL_MANAGER,
-        address STATE_VIEW,
-        address POSITION_MANAGER
+        uint256 len
     ) public view returns (bytes memory) {
         SuperVar memory tmp;
 
