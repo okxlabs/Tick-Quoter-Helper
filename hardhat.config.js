@@ -21,7 +21,7 @@ module.exports = {
   },
   networks: {
     hardhat: {
-      // 本地测试网络
+      // local test network
     },
     base: {
       url: "https://base.llamarpc.com",
