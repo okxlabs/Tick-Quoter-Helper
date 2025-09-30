@@ -21,12 +21,17 @@ import "./extLib/QueryIzumiSuperCompact.sol";
 import "./extLib/QueryUniv4TicksSuperCompact.sol";
 import "./extLib/QueryZoraTicksSuperCompact.sol";
 import "./extLib/QueryPancakeInfinityLBReserveSuperCompact.sol";
+import "./extLib/QueryFluid.sol";
+import "./extLib/QueryFluidLite.sol";
 
 contract QueryData is OwnableUpgradeable {
     // Core contract addresses (Base network)
     address public constant POOL_MANAGER = 0x498581fF718922c3f8e6A244956aF099B2652b2b;
     address public constant STATE_VIEW = 0xA3c0c9b65baD0b08107Aa264b0f3dB444b867A71;
     address public constant POSITION_MANAGER = 0x7C5f5A4bBd8fD63184577525326123B519429bDc;
+    // FluidLite contract addresses
+    address public constant FLUID_LITE_DEX = 0xBbcb91440523216e2b87052A99F69c604A7b6e00;
+    address public constant FLUID_LITE_DEPLOYER_CONTRACT = 0x4EC7b668BAF70d4A4b0FC7941a7708A07b6d45Be;
 
     function initialize() public initializer {
         __Ownable_init();
@@ -126,5 +131,15 @@ contract QueryData is OwnableUpgradeable {
         returns (int256 liquidity, uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee)
     {
         return QueryZoraTicksSuperCompact.getSlot0OfZora(coin, POOL_MANAGER);
+    }
+
+    // Specifically for Fluid
+    function queryFluid(address pool, uint256 dexVariables) public view returns (uint256 centerPrice, uint256 rangeShift, uint256 thresholdShift, uint256 centerPriceShift) {
+        return QueryFluid.queryFluid(pool, dexVariables);
+    }
+
+    // Specifically for FluidLite
+    function queryFluidLite(bytes8 dexId) public view returns (QueryFluidLite.DexKey memory dexKey, uint256 centerPrice, uint256 dexVariables, uint256 rangeShift, uint256 thresholdShift, uint256 centerPriceShift) {
+        return QueryFluidLite.queryFluidLite(FLUID_LITE_DEX, FLUID_LITE_DEPLOYER_CONTRACT, dexId);
     }
 }
