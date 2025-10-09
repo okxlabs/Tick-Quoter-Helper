@@ -73,7 +73,7 @@ contract QueryCurveUpgradeable is UUPSUpgradeable {
 
     function initialize(address _owner) public initializer onlyProxy {
         owner = _owner;
-        // 这里之所以再设置一遍是因为proxy需要，否则proxy里面这个属性就是0x0
+        // Set again here because proxy needs it, otherwise this property in proxy would be 0x0
         address_provider = 0x5ffe7FB82894076ECB99A30D6A32e969e6e35E98;
     }
 

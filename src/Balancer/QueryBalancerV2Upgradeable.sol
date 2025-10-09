@@ -72,7 +72,7 @@ contract QueryBalancerV2Upgradeable is UUPSUpgradeable {
         uint256 balance;
         address tokenAddress;
         uint256 tokenIndex;
-        uint256 weight; // 新增的权重字段
+        uint256 weight; // New weight field
     }
 
     modifier onlyOwner() {
@@ -156,7 +156,7 @@ contract QueryBalancerV2Upgradeable is UUPSUpgradeable {
         return indexOf(haystack, needle) >= 0;
     }
 
-    // 查找子字符串的位置
+    // Find the position of substring
     function indexOf(string memory haystack, string memory needle) internal pure virtual returns (int) {
         bytes memory haystackBytes = bytes(haystack);
         bytes memory needleBytes = bytes(needle);
@@ -214,7 +214,7 @@ contract QueryBalancerV2Upgradeable is UUPSUpgradeable {
                 balance: balances[i],
                 tokenAddress: tokens[i],
                 tokenIndex: i,
-                weight: weights.length > 0 ? weights[i] : 0 // 如果有权重则赋值，否则为0
+                weight: weights.length > 0 ? weights[i] : 0 // If weights exist then assign, otherwise 0
             });
         }
 
@@ -227,7 +227,7 @@ contract QueryBalancerV2Upgradeable is UUPSUpgradeable {
             try IBalancerPool(pool).getScalingFactors() returns (uint256[] memory scalingFactors) {
                 priceScale = scalingFactors;
             } catch {
-                priceScale = new uint256[](0); // 默认值
+                priceScale = new uint256[](0); // Default value
             }
         } else if (keccak256(bytes(poolType)) == keccak256(bytes("Linear"))) {
             liquidity = IBalancerPool(pool).getVirtualSupply();
@@ -235,7 +235,7 @@ contract QueryBalancerV2Upgradeable is UUPSUpgradeable {
             try IBalancerPool(pool).getScalingFactors() returns (uint256[] memory scalingFactors) {
                 priceScale = scalingFactors;
             } catch {
-                priceScale = new uint256[](0); // 默认值
+                priceScale = new uint256[](0); // Default value
             }
             uint256 bptIndex = IBalancerPool(pool).getBptIndex();
             uint256 mainIndex = IBalancerPool(pool).getMainIndex();
@@ -272,7 +272,7 @@ contract QueryBalancerV2UpgradeableV2 is QueryBalancerV2Upgradeable {
         try IBalancerPool(pool).getNormalizedWeights() {
             try IBalancerPool(pool).getGradualWeightUpdateParams() returns (uint256 startTime, uint256 endTime) {
                 if (startTime < block.timestamp && endTime > block.timestamp) {
-                    // LiquidityBootstrappingPool暂不支持
+                    // LiquidityBootstrappingPool not supported yet
                     return "";
                 }
             } catch {
@@ -439,7 +439,7 @@ contract QueryBalancerV2UpgradeableV3 is QueryBalancerV2UpgradeableV2 {
                 balance: balances[i],
                 tokenAddress: tokens[i],
                 tokenIndex: i,
-                weight: weights.length > 0 ? weights[i] : 0 // 如果有权重则赋值，否则为0
+                weight: weights.length > 0 ? weights[i] : 0 // If weights exist then assign, otherwise 0
             });
         }
 
@@ -452,7 +452,7 @@ contract QueryBalancerV2UpgradeableV3 is QueryBalancerV2UpgradeableV2 {
             try IBalancerPool(pool).getScalingFactors() returns (uint256[] memory scalingFactors) {
                 priceScale = scalingFactors;
             } catch {
-                priceScale = new uint256[](0); // 默认值
+                priceScale = new uint256[](0); // Default value
             }
         } else if (keccak256(bytes(poolType)) == keccak256(bytes("Linear"))) {
             liquidity = IBalancerPool(pool).getVirtualSupply();
@@ -460,7 +460,7 @@ contract QueryBalancerV2UpgradeableV3 is QueryBalancerV2UpgradeableV2 {
             try IBalancerPool(pool).getScalingFactors() returns (uint256[] memory scalingFactors) {
                 priceScale = scalingFactors;
             } catch {
-                priceScale = new uint256[](0); // 默认值
+                priceScale = new uint256[](0); // Default value
             }
             uint256 bptIndex = IBalancerPool(pool).getBptIndex();
             uint256 mainIndex = IBalancerPool(pool).getMainIndex();

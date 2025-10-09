@@ -49,7 +49,7 @@ contract QueryCurveUpgradeableEth is QueryCurveUpgradeableV2 {
         address[10] memory handlers = ICurveMetaRegister(meta_register()).get_registry_handlers_from_pool(pool);
 
         if (!is_meta && 0x46a8a9CF4Fc8e99EC3A14558ACABC1D93A27de68 == handlers[0]) {
-            // 兼容main registry里面的lending pool
+            // Compatible with lending pools in main registry
             return ICurveMainBaseRegistry(0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5).get_underlying_balances(pool);
         } else {
             return ICurveMetaRegister(meta_register()).get_balances(pool);
@@ -66,7 +66,7 @@ contract QueryCurveUpgradeableEth is QueryCurveUpgradeableV2 {
         bool is_meta = ICurveMetaRegister(meta_register()).is_meta(pool);
         address[10] memory handlers = ICurveMetaRegister(meta_register()).get_registry_handlers_from_pool(pool);
         if (!is_meta && 0x46a8a9CF4Fc8e99EC3A14558ACABC1D93A27de68 == handlers[0]) {
-            // 兼容main registry里面的lending pool
+            // Compatible with lending pools in main registry
             return ICurveMainBaseRegistry(0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5).get_underlying_coins(pool);
         } else {
             return ICurveMetaRegister(meta_register()).get_coins(pool);
@@ -85,7 +85,7 @@ contract QueryCurveUpgradeableEth is QueryCurveUpgradeableV2 {
             bool is_meta = ICurveMetaRegister(meta_register()).is_meta(pool);
             address[10] memory handlers = ICurveMetaRegister(meta_register()).get_registry_handlers_from_pool(pool);
             if (!is_meta && 0x46a8a9CF4Fc8e99EC3A14558ACABC1D93A27de68 == handlers[0]) {
-                // 兼容main registry里面的lending pool
+                // Compatible with lending pools in main registry
                 tokens = ICurveMainBaseRegistry(0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5).get_underlying_coins(pool);
             } else {
                 tokens = ICurveMetaRegister(meta_register()).get_coins(pool);
