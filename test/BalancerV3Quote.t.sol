@@ -1,21 +1,14 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.17;
+pragma solidity ^0.8.22;
 pragma abicoder v2;
 
 import "forge-std/console2.sol";
 import "forge-std/test.sol";
 import {BalancerV3Quoter, IVault, IERC20, IQuantAMMWeightedPool} from "../src/Balancer/BalancerV3Quoter.sol";
-
-// Test version that doesn't disable initializers
-contract BalancerV3QuoterTest is BalancerV3Quoter {
-    // Override constructor to not disable initializers for testing
-    constructor() {
-        // Don't call _disableInitializers() for testing
-    }
-}
+import "lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract BalancerV3QuoteTest is Test {
-    BalancerV3QuoterTest quoter;
+    BalancerV3Quoter quoter;
 
     // Balancer V3 Vault address (Base network)
     address constant VAULT = 0xbA1333333333a1BA1108E8412f11850A5C319bA9;
@@ -29,9 +22,22 @@ contract BalancerV3QuoteTest is Test {
         // Fork Base network for testing
         vm.createSelectFork("https://base.lava.build");
 
-        // Deploy the quoter and initialize it
-        quoter = new BalancerV3QuoterTest();
-        quoter.initialize(VAULT, address(this));
+        // Deploy the implementation contract (no constructor now)
+        BalancerV3Quoter implementation = new BalancerV3Quoter();
+        
+        // Prepare initialization data (no parameters needed)
+        bytes memory initData = abi.encodeWithSelector(
+            BalancerV3Quoter.initialize.selector
+        );
+        
+        // Deploy proxy and initialize
+        ERC1967Proxy proxy = new ERC1967Proxy(address(implementation), initData);
+        quoter = BalancerV3Quoter(address(proxy));
+    }
+
+    function test_getTotalSupply() public {
+        uint256 totalSupply = quoter.getTotalSupply(QUANTAMM_POOL);
+        console2.log(totalSupply);
     }
 
     function test_getPoolData() public {

@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
+
 interface IERC20 {
     /// @dev Emitted when `value` tokens are moved from one account (`from`) to another (`to`).
     event Transfer(address indexed from, address indexed to, uint256 value);
@@ -215,6 +216,7 @@ interface IBalancerPool {
         returns (uint256 value, bool isUpdating, uint256 precision);
     function name() external view returns (string memory);
     function symbol() external view returns (string memory);
+    function totalSupply() external view returns (uint256);
 }
 
 contract BalancerV3Quoter is Initializable, OwnableUpgradeable {
@@ -230,20 +232,12 @@ contract BalancerV3Quoter is Initializable, OwnableUpgradeable {
         IVault.HooksConfig hooksConfig;
     }
 
-    address public VAULT;
+    address public constant VAULT = 0xbA1333333333a1BA1108E8412f11850A5C319bA9;
 
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
-    }
-
-    function initialize(address _vault, address _owner) public initializer {
+    function initialize() public virtual initializer {
         __Ownable_init();
-        VAULT = _vault;
-        if (_owner != _msgSender()) {
-            _transferOwnership(_owner);
-        }
     }
+
 
     function getWeightedPoolData(
         address pool
@@ -422,6 +416,10 @@ contract BalancerV3Quoter is Initializable, OwnableUpgradeable {
         string memory needle
     ) internal pure virtual returns (bool) {
         return indexOf(haystack, needle) >= 0;
+    }
+
+    function getTotalSupply(address pool) public view returns (uint256) {
+        return IBalancerPool(pool).totalSupply();
     }
 
     function indexOf(
