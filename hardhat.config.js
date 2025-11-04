@@ -1,5 +1,6 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("@openzeppelin/hardhat-upgrades");
+require("dotenv").config();
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -52,6 +53,11 @@ module.exports = {
       url: "https://polygon.llamarpc.com",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 137
+    },
+    hypeevm: {
+      url: "https://rpc.hyperliquid.xyz/evm",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 999
     }
   },
   etherscan: {
@@ -61,7 +67,8 @@ module.exports = {
       mainnet: process.env.ETHERSCAN_API_KEY || "",
       arbitrumOne: process.env.ARBISCAN_API_KEY || "",
       optimisticEthereum: process.env.OPTIMISM_API_KEY || "",
-      polygon: process.env.POLYGONSCAN_API_KEY || ""
+      polygon: process.env.POLYGONSCAN_API_KEY || "",
+      hypeevm: process.env.HYPEEVM_API_KEY || "",
     }
   }
 };
