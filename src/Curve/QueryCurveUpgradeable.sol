@@ -31,6 +31,8 @@ interface ICurveV2Pool {
     function mid_fee() external view returns (uint256);
 
     function out_fee() external view returns (uint256);
+
+    function last_prices_timestamp() external view returns (uint256);
 }
 
 interface ICurveNGPool {
