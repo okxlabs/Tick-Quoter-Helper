@@ -10,6 +10,12 @@ import {
     IAddressProvider
 } from "./QueryCurveUpgradeable.sol";
 
+address constant TNG_VIEW_ADDRESS = 0xFcBA2D0133F705DD8bAf250a64f1DE0d7091F5Bd;
+
+interface ICurveTNGPool {
+    function VIEW() external view returns (address);
+}
+
 contract QueryCurveUpgradeableBase is QueryCurveUpgradeableV2 {
     function get_params(address pool)
         public
@@ -56,12 +62,16 @@ contract QueryCurveUpgradeableBase is QueryCurveUpgradeableV2 {
             fee_gamma = ICurveV2Pool(pool).fee_gamma();
             mid_fee = ICurveV2Pool(pool).mid_fee();
             out_fee = ICurveV2Pool(pool).out_fee();
-            try ICurveV2Pool(pool).last_prices_timestamp() returns (
-                uint256
+            try ICurveTNGPool(pool).VIEW() returns (
+                address viewAddress
             ) {
-                name = 2;
+                if (viewAddress == TNG_VIEW_ADDRESS) {
+                    name = 4;
+                } else {
+                    revert("Unknown Twocrypto-NG view address");
+                }
             } catch {
-                name = 4;
+                name = 2;
             }
         } catch {
             price = get_virtual_price(pool);
