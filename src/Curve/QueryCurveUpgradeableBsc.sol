@@ -10,8 +10,8 @@ import {
     IAddressProvider
 } from "./QueryCurveUpgradeable.sol";
 
-// https://basescan.org/address/0x3d0143f6453a707b840b6565f959d6cbba86f23e#code
-address constant TNG_VIEW_ADDRESS = 0xFcBA2D0133F705DD8bAf250a64f1DE0d7091F5Bd;
+// https://bscscan.com/address/0x5756bbdDC03DaB01a3900F01Fb15641C3bfcc457#code
+address constant TNG_VIEW_ADDRESS = 0x068712A87FFCB06cd1069Ad7526bDA8Bd564A910;
 
 interface ICurveTNGPool {
     function VIEW() external view returns (address);
