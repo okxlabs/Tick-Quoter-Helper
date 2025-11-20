@@ -17,7 +17,7 @@ interface ICurveTNGPool {
     function VIEW() external view returns (address);
 }
 
-contract QueryCurveUpgradeableBase is QueryCurveUpgradeableV2 {
+contract QueryCurveUpgradeableBsc is QueryCurveUpgradeableV2 {
     function get_params(address pool)
         public
         view
