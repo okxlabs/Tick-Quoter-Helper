@@ -12,9 +12,15 @@ import {
 
 // https://basescan.org/address/0x3d0143f6453a707b840b6565f959d6cbba86f23e#code
 address constant TNG_VIEW_ADDRESS = 0xFcBA2D0133F705DD8bAf250a64f1DE0d7091F5Bd;
+address constant TNG_MATH_ADDRESS = 0x2Bd498ae431dC98694010950fcF8ACd3599f5512;
 
 interface ICurveTNGPool {
     function VIEW() external view returns (address);
+    function MATH() external view returns (address);
+}
+
+interface ICurveTNGMath {
+    function version() external view returns (string memory);
 }
 
 contract QueryCurveUpgradeableBase is QueryCurveUpgradeableV2 {
@@ -38,7 +44,7 @@ contract QueryCurveUpgradeableBase is QueryCurveUpgradeableV2 {
             uint256[] memory price_scale
         )
     {
-        //params[0] 1-v1  2-v2  3-NG  4-TNG
+        //params[0] 1-v1  2-v2  3-NG  4-TNG  5-Unknown
         name = 1;
         gamma = 0;
         D = 0;
@@ -63,16 +69,20 @@ contract QueryCurveUpgradeableBase is QueryCurveUpgradeableV2 {
             fee_gamma = ICurveV2Pool(pool).fee_gamma();
             mid_fee = ICurveV2Pool(pool).mid_fee();
             out_fee = ICurveV2Pool(pool).out_fee();
-            try ICurveTNGPool(pool).VIEW() returns (
-                address viewAddress
-            ) {
-                if (viewAddress == TNG_VIEW_ADDRESS) {
+            try ICurveTNGPool(pool).MATH() returns (address mathAddress) {
+                string memory version = ICurveTNGMath(mathAddress).version();
+                if (
+                    mathAddress == TNG_MATH_ADDRESS && 
+                    keccak256(bytes(version)) == keccak256(bytes("v0.1.0"))
+                ) {
                     name = 4;
+                } else if (mathAddress != TNG_MATH_ADDRESS) {
+                    name = 2;
                 } else {
-                    revert("Unknown Twocrypto-NG view address");
+                    name = 5;
                 }
             } catch {
-                name = 2;
+                name = 5;
             }
         } catch {
             price = get_virtual_price(pool);
