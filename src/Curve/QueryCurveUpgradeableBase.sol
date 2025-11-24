@@ -69,19 +69,20 @@ contract QueryCurveUpgradeableBase is QueryCurveUpgradeableV2 {
             fee_gamma = ICurveV2Pool(pool).fee_gamma();
             mid_fee = ICurveV2Pool(pool).mid_fee();
             out_fee = ICurveV2Pool(pool).out_fee();
-            try ICurveTNGPool(pool).MATH() returns (address mathAddress) {
-                string memory version = ICurveTNGMath(mathAddress).version();
-                if (
-                    mathAddress == TNG_MATH_ADDRESS && 
-                    keccak256(bytes(version)) == keccak256(bytes("v0.1.0"))
-                ) {
-                    name = 4;
-                } else if (mathAddress != TNG_MATH_ADDRESS) {
-                    name = 2;
+            (bool success, bytes memory data) = pool.staticcall(abi.encodeWithSelector(ICurveTNGPool.MATH.selector));
+            if (success && data.length >= 32) {
+                address mathAddress = abi.decode(data, (address));
+                if (mathAddress == TNG_MATH_ADDRESS) {
+                    string memory version = ICurveTNGMath(mathAddress).version();
+                    if (keccak256(bytes(version)) == keccak256(bytes("v0.1.0"))) {
+                        name = 4;
+                    } else {
+                        name = 5;
+                    }
                 } else {
-                    name = 5;
+                    name = 2;
                 }
-            } catch {
+            } else {
                 name = 5;
             }
         } catch {
