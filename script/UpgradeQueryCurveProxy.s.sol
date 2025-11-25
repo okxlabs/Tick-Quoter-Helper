@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.17;
+pragma solidity 0.8.20;
 
 import "forge-std/test.sol";
 // import {Script, console} from "forge-std/Script.sol";
 import {ERC1967Proxy} from "lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {QueryCurveUpgradeable, QueryCurveUpgradeableV2, TokenInfo} from "../src/Curve/QueryCurveUpgradeable.sol";
-import {QueryCurveUpgradeableEth} from "../src/Curve/QueryCurveUpgradeableEth.sol";
+import {QueryCurveUpgradeableBase} from "../src/Curve/QueryCurveUpgradeableBase.sol";
 // import {QueryCurveUpgradeableOpt} from "../src/Curve/QueryCurveUpgradeableOpt.sol";
 // import {QueryCurveUpgradeableArb, CurveMetaRegistryArb} from "../src/Curve/QueryCurveUpgradeableArb.sol";
 // import {QueryCurveUpgradeablePolygon, CurveMetaRegistryPolygon, IRegistryHandler} from "../src/Curve/QueryCurveUpgradeablePolygon.sol";
@@ -61,7 +61,7 @@ contract Deploy is Test {
 
         // address newImpl = 0x6E2f48FEa07be609e40eD3dA8105407aD3751BBa;
 
-        QueryCurveUpgradeable newImpl = new QueryCurveUpgradeableEth();
+        QueryCurveUpgradeableBase newImpl = new QueryCurveUpgradeableBase();
         console2.log("New impl contract deployed at:", address(newImpl));
 
         // QueryCurveUpgradeable(proxy).initialize(deployer);

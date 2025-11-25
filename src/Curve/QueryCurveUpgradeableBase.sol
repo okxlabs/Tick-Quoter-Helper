@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.17;
+pragma solidity 0.8.20;
 
 import {
     QueryCurveUpgradeableV2,
@@ -101,5 +101,46 @@ contract QueryCurveUpgradeableBase is QueryCurveUpgradeableV2 {
         }
         A = ICurvePool(pool).A();
         fee = get_fee(pool);
+    }
+
+    function migrateLegacyStorage() external {
+        require(owner == address(0), "owner already migrated");
+
+        address legacyOwner = _legacyOwner();
+        address legacyProvider = _legacyAddressProvider();
+
+        require(legacyOwner != address(0), "legacy owner missing");
+        require(legacyProvider != address(0), "legacy provider missing");
+        require(msg.sender == legacyOwner, "caller is not legacy owner");
+
+        owner = legacyOwner;
+        address_provider = legacyProvider;
+
+        _clearLegacySlots();
+    }
+
+    function _legacyOwner() internal view returns (address legacyOwner) {
+        bytes32 slot = bytes32(uint256(1));
+        assembly {
+            legacyOwner := sload(slot)
+        }
+    }
+
+    function _legacyAddressProvider()
+        internal
+        view
+        returns (address legacyProvider)
+    {
+        bytes32 slot = bytes32(uint256(0));
+        assembly {
+            legacyProvider := sload(slot)
+        }
+    }
+
+    function _clearLegacySlots() internal {
+        assembly {
+            sstore(0, 0)
+            sstore(1, 0)
+        }
     }
 }
