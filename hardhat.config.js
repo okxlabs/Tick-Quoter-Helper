@@ -25,7 +25,7 @@ module.exports = {
       // local test network
     },
     base: {
-      url: "https://base.llamarpc.com",
+      url: "https://mainnet.base.org",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 8453
     },
@@ -61,14 +61,6 @@ module.exports = {
     }
   },
   etherscan: {
-    apiKey: {
-      base: process.env.BASESCAN_API_KEY || "",
-      bsc: process.env.BSCSCAN_API_KEY || "",
-      mainnet: process.env.ETHERSCAN_API_KEY || "",
-      arbitrumOne: process.env.ARBISCAN_API_KEY || "",
-      optimisticEthereum: process.env.OPTIMISM_API_KEY || "",
-      polygon: process.env.POLYGONSCAN_API_KEY || "",
-      hypeevm: process.env.HYPEEVM_API_KEY || "",
-    }
-  }
+    apiKey: process.env.ETHERSCAN_API_KEY,
+  },
 };
