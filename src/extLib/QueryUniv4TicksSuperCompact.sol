@@ -130,6 +130,101 @@ library QueryUniv4TicksSuperCompact {
         return tickInfo;
     }
 
+    function queryUniv4TicksSuperCompactForNoPositionManager(
+        bytes32 poolId,
+        uint256 len,
+        address STATE_VIEW,
+        IPositionManager.PoolKey calldata poolkey
+    ) public view returns (bytes memory) {
+        SuperVar memory tmp;
+        tmp.tickSpacing = poolkey.tickSpacing;
+
+        IStateView.PoolId statePoolId = IStateView.PoolId.wrap(poolId);
+
+        {
+            (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee) =
+                IStateView(STATE_VIEW).getSlot0(statePoolId);
+            tmp.currTick = tick;
+        }
+
+        tmp.right = tmp.currTick / tmp.tickSpacing / int24(256);
+        tmp.leftMost = -887_272 / tmp.tickSpacing / int24(256) - 2;
+        tmp.rightMost = 887_272 / tmp.tickSpacing / int24(256) + 1;
+
+        if (tmp.currTick < 0) {
+            tmp.initPoint = uint256(
+                int256(tmp.currTick) / int256(tmp.tickSpacing)
+                    - (int256(tmp.currTick) / int256(tmp.tickSpacing) / 256 - 1) * 256
+            ) % 256;
+        } else {
+            tmp.initPoint = (uint256(int256(tmp.currTick)) / uint256(int256(tmp.tickSpacing))) % 256;
+        }
+        tmp.initPoint2 = tmp.initPoint;
+
+        if (tmp.currTick < 0) tmp.right--;
+
+        bytes memory tickInfo;
+        tmp.left = tmp.right;
+
+        uint256 index = 0;
+
+        while (index < len / 2 && tmp.right < tmp.rightMost) {
+            uint256 res = IStateView(STATE_VIEW).getTickBitmap(statePoolId, int16(tmp.right));
+            if (res > 0) {
+                res = res >> tmp.initPoint;
+                for (uint256 i = tmp.initPoint; i < 256 && index < len / 2; i++) {
+                    uint256 isInit = res & 0x01;
+                    if (isInit > 0) {
+                        int256 tick = int256((256 * tmp.right + int256(i)) * tmp.tickSpacing);
+
+                        (uint128 liquidityGross, int128 liquidityNet) =
+                            IStateView(STATE_VIEW).getTickLiquidity(statePoolId, int24(int256(tick)));
+
+                        int256 data = int256(uint256(int256(tick)) << 128)
+                            + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
+                        tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+
+                        index++;
+                    }
+
+                    res = res >> 1;
+                }
+            }
+            tmp.initPoint = 0;
+            tmp.right++;
+        }
+
+        bool isInitPoint = true;
+        while (index < len && tmp.left > tmp.leftMost) {
+            uint256 res = IStateView(STATE_VIEW).getTickBitmap(statePoolId, int16(tmp.left));
+            if (res > 0 && tmp.initPoint2 != 0) {
+                res = isInitPoint ? res << ((256 - tmp.initPoint2) % 256) : res;
+                for (uint256 i = tmp.initPoint2 - 1; i >= 0 && index < len; i--) {
+                    uint256 isInit = res & 0x8000000000000000000000000000000000000000000000000000000000000000;
+                    if (isInit > 0) {
+                        int256 tick = int256((256 * tmp.left + int256(i)) * tmp.tickSpacing);
+
+                        (uint128 liquidityGross, int128 liquidityNet) =
+                            IStateView(STATE_VIEW).getTickLiquidity(statePoolId, int24(int256(tick)));
+
+                        int256 data = int256(uint256(int256(tick)) << 128)
+                            + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
+                        tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+
+                        index++;
+                    }
+
+                    res = res << 1;
+                    if (i == 0) break;
+                }
+            }
+            isInitPoint = false;
+            tmp.initPoint2 = 256;
+            tmp.left--;
+        }
+        return tickInfo;
+    }
+
     function queryPancakeInfinityTicksSuperCompact(
         bytes32 poolId,
         uint256 len
