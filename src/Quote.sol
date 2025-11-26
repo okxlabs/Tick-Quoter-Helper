@@ -98,6 +98,20 @@ contract QueryData is OwnableUpgradeable {
         );
     }
 
+    /*
+    * @notice Query the ticks of a Uniswap V4 pool for no position manager
+    * @param poolId The ID of the pool
+    * @param len The length of the ticks
+    * @param STATE_VIEW The address of the state view
+    * @param poolkey The pool key
+    * @return The ticks
+    */
+    function queryUniv4TicksSuperCompactForNoPositionManager(bytes32 poolId, uint256 len, IPositionManager.PoolKey calldata poolkey) public view returns (bytes memory) {
+        return QueryUniv4TicksSuperCompact.queryUniv4TicksSuperCompactForNoPositionManager(
+            poolId, len, STATE_VIEW, poolkey
+        );
+    }
+
     function queryPancakeInfinityTicksSuperCompact(bytes32 poolId, uint256 len) public view returns (bytes memory) {
         return QueryUniv4TicksSuperCompact.queryPancakeInfinityTicksSuperCompact(
             poolId, len
