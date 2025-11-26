@@ -106,7 +106,7 @@ contract QueryData is OwnableUpgradeable {
     * @param poolkey The pool key
     * @return The ticks
     */
-    function queryUniv4TicksSuperCompactForNoPositionManager(bytes32 poolId, uint256 len, address STATE_VIEW, IPositionManager.PoolKey calldata poolkey) public view returns (bytes memory) {
+    function queryUniv4TicksSuperCompactForNoPositionManager(bytes32 poolId, uint256 len, IPositionManager.PoolKey calldata poolkey) public view returns (bytes memory) {
         return QueryUniv4TicksSuperCompact.queryUniv4TicksSuperCompactForNoPositionManager(
             poolId, len, STATE_VIEW, poolkey
         );
