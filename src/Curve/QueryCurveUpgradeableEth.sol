@@ -173,7 +173,7 @@ contract QueryCurveUpgradeableEth is QueryCurveUpgradeableV2 {
                     name = 2;
                 }
             } else {
-                name = 5;
+                name = 2;
             }
         } catch {
             price = get_virtual_price(pool);
