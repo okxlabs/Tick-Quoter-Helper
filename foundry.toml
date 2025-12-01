@@ -1,5 +1,5 @@
 [profile.default]
-src = "src/Curve"
+src = "src"
 test = "test"
 script = "script"
 out = "out"
