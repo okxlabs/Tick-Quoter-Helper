@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
 import {Script, console} from "forge-std/Script.sol";
@@ -15,7 +15,6 @@ interface ICurveMetaRegister {
     function pool_list(uint256 _index) external view returns (address);
 }
 
-// forge script script/DeployQueryCurveProxy.s.sol:DeployQueryCurveUpgradeable  --rpc-url $ETHEREUM_RPC_URL --password $KEYSTORE_PAS --sender $DEPLOY_SENDER
 contract DeployQueryCurveUpgradeable is Script {
     address internal constant deployer = 0x4e59b44847b379578588920cA78FbF26c0B4956C;
     address internal constant deployer2 = 0x0000000000FFe8B47B3e2130213B802212439497;
@@ -24,13 +23,11 @@ contract DeployQueryCurveUpgradeable is Script {
 
     function deploy(bytes32 salt, bytes memory payload) public returns (address) {
         vm.broadcast();
-        // 调用代理合约进行部署
         (bool success, bytes memory result) = deployer.call{value: 0}(abi.encodePacked(salt, payload));
         require(success, "Deployment failed");
         // console2.logBytes(result);
         // console2.log(result.length);
 
-        // 获取新合约地址
         address newContractAddress;
         assembly {
             newContractAddress := mload(add(result, 20))
@@ -50,9 +47,7 @@ contract DeployQueryCurveUpgradeable is Script {
 
     function deployQueryCurveUpgradeable() public returns (address) {
         console.log("start deply QueryCurveUpgradeable:");
-        // 创建QueryCurveUpgradeable合约的初始化代码
         bytes memory bytecode = type(QueryCurveUpgradeable).creationCode;
-        // 计算盐值（salt），可以使用任意值
         bytes32 salt = keccak256(abi.encodePacked("QueryCurveUpgradeable"));
         address newContractAddress = deploy(salt, bytecode);
         assert(newContractAddress == 0x2109B30D287C729866618Adac995602168C2C118);
@@ -70,8 +65,6 @@ contract DeployQueryCurveUpgradeable is Script {
     }
 }
 
-
-// forge script script/DeployQueryCurveProxy.s.sol:DeployQueryCurveProxy  --rpc-url $ETHEREUM_RPC_URL --password $KEYSTORE_PAS --sender $DEPLOY_SENDER
 contract DeployQueryCurveProxy is DeployQueryCurveUpgradeable {
     address internal constant implementation = 0x2109B30D287C729866618Adac995602168C2C118;
     address internal constant owner = 0x86e024B18d575d5c11756048B3918FD478dEE5e9;
@@ -84,14 +77,12 @@ contract DeployQueryCurveProxy is DeployQueryCurveUpgradeable {
             assert(implementation == newImplementaion);
         }
         console.log("start deply ERC1967Proxy:");
-        // 创建ERC1967Proxy合约的初始化代码
         bytes memory bytecode = type(ERC1967Proxy).creationCode;
         bytes memory _data = abi.encodeWithSignature("initialize(address)", owner);
         bytes memory constructorArgs = abi.encode(implementation, _data);
         bytes memory payload = abi.encodePacked(bytecode, constructorArgs);
-        // 计算盐值（salt），可以使用任意值
         bytes32 salt = keccak256(abi.encodePacked("QueryCurveERC1967Proxy"));
-        address newContractAddress = deploy(salt, payload);    // 0x5B1cDde612852EC8eA070de3c29CF0c9f0E6700B
+        address newContractAddress = deploy(salt, payload); 
         assert(newContractAddress == 0x5B1cDde612852EC8eA070de3c29CF0c9f0E6700B);
 
         address _owner = QueryCurveUpgradeable(newContractAddress).owner();
