@@ -17,6 +17,7 @@ contract BalancerV3QuoteTest is Test {
     address constant QUANTAMM_POOL = 0xb4161AeA25BD6C5c8590aD50deB4Ca752532F05D; // QuantAMM WeightedPool
     address constant WEIGHTED_POOL = 0x4Fbb7870DBE7A7Ef4866A33c0eED73D395730dc0; // Standard WeightedPool
     address constant STABLE_POOL = 0x7AB124EC4029316c2A42F713828ddf2a192B36db; // StablePool (with hook)
+    address constant FAIL_POOL = 0x8056adDb74F5dA49b697984E3B464Dec0F72583c; // Fail pool (no hook)
 
     function setUp() public {
         // Fork Base network for testing
@@ -46,5 +47,21 @@ contract BalancerV3QuoteTest is Test {
         BalancerV3Quoter.StablePoolData memory stableData;
         uint256[] memory balancesRaw;
         (pool_type, weightedData, stableData, balancesRaw) = quoter.getPoolData(QUANTAMM_POOL);
+        console2.log(pool_type);
+        console2.log(weightedData.immutableData.tokens.length);
+        console2.log(stableData.immutableData.tokens.length);
+        console2.log(balancesRaw.length);
+    }
+
+    function test_getPoolData_fail() public {
+        string memory pool_type;
+        BalancerV3Quoter.WeightedPoolData memory weightedData;
+        BalancerV3Quoter.StablePoolData memory stableData;
+        uint256[] memory balancesRaw;
+        (pool_type, weightedData, stableData, balancesRaw) = quoter.getPoolData(FAIL_POOL);
+        console2.log(pool_type);
+        console2.log(weightedData.immutableData.tokens.length);
+        console2.log(stableData.immutableData.tokens.length);
+        console2.log(balancesRaw.length);
     }
 }

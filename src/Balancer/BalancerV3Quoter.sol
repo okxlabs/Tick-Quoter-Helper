@@ -217,6 +217,7 @@ interface IBalancerPool {
     function name() external view returns (string memory);
     function symbol() external view returns (string memory);
     function totalSupply() external view returns (uint256);
+    function getTokens() external view returns (IERC20[] memory tokens);
 }
 
 contract BalancerV3Quoter is Initializable, OwnableUpgradeable {
@@ -242,15 +243,10 @@ contract BalancerV3Quoter is Initializable, OwnableUpgradeable {
     function getWeightedPoolData(
         address pool
     ) public view returns (WeightedPoolData memory data) {
-        IWeightedPool.WeightedPoolImmutableData
-            memory immutableData = IWeightedPool(pool)
-                .getWeightedPoolImmutableData();
-        IWeightedPool.WeightedPoolDynamicData
-            memory dynamicData = IWeightedPool(pool)
-                .getWeightedPoolDynamicData();
-        IVault.HooksConfig memory hooksConfig = IVault(VAULT).getHooksConfig(
-            pool
-        );
+        IWeightedPool.WeightedPoolImmutableData memory immutableData = IWeightedPool(pool).getWeightedPoolImmutableData();
+        IWeightedPool.WeightedPoolDynamicData memory dynamicData = IWeightedPool(pool).getWeightedPoolDynamicData();
+        IVault.HooksConfig memory hooksConfig = IVault(VAULT).getHooksConfig(pool);
+
         return (
             WeightedPoolData({
                 immutableData: immutableData,
@@ -263,14 +259,10 @@ contract BalancerV3Quoter is Initializable, OwnableUpgradeable {
     function getStablePoolData(
         address pool
     ) public view returns (StablePoolData memory data) {
-        IStablePool.StablePoolImmutableData memory immutableData = IStablePool(
-            pool
-        ).getStablePoolImmutableData();
-        IStablePool.StablePoolDynamicData memory dynamicData = IStablePool(pool)
-            .getStablePoolDynamicData();
-        IVault.HooksConfig memory hooksConfig = IVault(VAULT).getHooksConfig(
-            pool
-        );
+        IStablePool.StablePoolImmutableData memory immutableData = IStablePool(pool).getStablePoolImmutableData();
+        IStablePool.StablePoolDynamicData memory dynamicData = IStablePool(pool).getStablePoolDynamicData();
+        IVault.HooksConfig memory hooksConfig = IVault(VAULT).getHooksConfig(pool);
+
         return (
             StablePoolData({
                 immutableData: immutableData,
@@ -283,9 +275,9 @@ contract BalancerV3Quoter is Initializable, OwnableUpgradeable {
     function getQuantAMMWeightedPoolDynamicData(
         address pool
     ) public view returns (IWeightedPool.WeightedPoolDynamicData memory data) {
-        IQuantAMMWeightedPool.QuantAMMWeightedPoolDynamicData memory dynamicData = IQuantAMMWeightedPool(pool)
-            .getQuantAMMWeightedPoolDynamicData();
+        IQuantAMMWeightedPool.QuantAMMWeightedPoolDynamicData memory dynamicData = IQuantAMMWeightedPool(pool).getQuantAMMWeightedPoolDynamicData();
         uint256 staticSwapFeePercentage = IQuantAMMWeightedPool(pool).getStaticSwapFeePercentage();
+
         return (
             IWeightedPool.WeightedPoolDynamicData({
                 balancesLiveScaled18: dynamicData.balancesLiveScaled18,
@@ -302,17 +294,14 @@ contract BalancerV3Quoter is Initializable, OwnableUpgradeable {
     function getQuantAMMWeightedPoolImmutableData(
         address pool
     ) public view returns (IWeightedPool.WeightedPoolImmutableData memory data) {
-        IQuantAMMWeightedPool.QuantAMMWeightedPoolImmutableData memory immutableData = IQuantAMMWeightedPool(pool)
-            .getQuantAMMWeightedPoolImmutableData();
-
+        IQuantAMMWeightedPool.QuantAMMWeightedPoolImmutableData memory immutableData = IQuantAMMWeightedPool(pool).getQuantAMMWeightedPoolImmutableData();
         IVault.PoolData memory poolData = IVault(VAULT).getPoolData(pool);
-        uint256[] memory decimalScalingFactors = poolData.decimalScalingFactors;
         uint256[] memory normalizedWeights = IQuantAMMWeightedPool(pool).getNormalizedWeights();
 
         return (
             IWeightedPool.WeightedPoolImmutableData({
                 tokens: immutableData.tokens,
-                decimalScalingFactors: decimalScalingFactors,
+                decimalScalingFactors: poolData.decimalScalingFactors,
                 normalizedWeights: normalizedWeights
             })
         );
@@ -321,9 +310,10 @@ contract BalancerV3Quoter is Initializable, OwnableUpgradeable {
     function getQuantAMMWeightedPoolData(
         address pool
     ) public view returns (WeightedPoolData memory data) {
-        IWeightedPool.WeightedPoolImmutableData memory immutableData = getQuantAMMWeightedPoolImmutableData(pool);
-        IWeightedPool.WeightedPoolDynamicData memory dynamicData = getQuantAMMWeightedPoolDynamicData(pool);
+        IWeightedPool.WeightedPoolImmutableData memory immutableData = this.getQuantAMMWeightedPoolImmutableData(pool);
+        IWeightedPool.WeightedPoolDynamicData memory dynamicData = this.getQuantAMMWeightedPoolDynamicData(pool);
         IVault.HooksConfig memory hooksConfig = IVault(VAULT).getHooksConfig(pool);
+
         return (
             WeightedPoolData({
                 immutableData: immutableData,
@@ -348,14 +338,34 @@ contract BalancerV3Quoter is Initializable, OwnableUpgradeable {
         )
     {
         pool_type = getPoolType(pool);
-        if (contains(pool_type, "QuantAMMWeighted")) {
-            weightedData = getQuantAMMWeightedPoolData(pool);
+        if (contains(pool_type, "Others")) {
+            return (pool_type, weightedData, stableData, balancesRaw);
+        } else if (contains(pool_type, "QuantAMMWeighted")) {
+            try this.getQuantAMMWeightedPoolData(pool) returns (WeightedPoolData memory _weightedData) {
+                weightedData = _weightedData;
+            } catch {
+                pool_type = "Others";
+            }
         } else if (contains(pool_type, "Weighted")) {
-            weightedData = getWeightedPoolData(pool);
+            try this.getWeightedPoolData(pool) returns (WeightedPoolData memory _weightedData) {
+                weightedData = _weightedData;
+            } catch {
+                pool_type = "Others";
+            }
         } else if (contains(pool_type, "Stable")) {
-            stableData = getStablePoolData(pool);
+            try this.getStablePoolData(pool) returns (StablePoolData memory _stableData) {
+                stableData = _stableData;
+            } catch {
+                pool_type = "Others";
+            }
         }
-        balancesRaw = IVault(VAULT).getPoolData(pool).balancesRaw;
+
+        try IVault(VAULT).getPoolData(pool) returns (IVault.PoolData memory poolData) {
+            balancesRaw = poolData.balancesRaw;
+        } catch {
+            // Return empty array as default
+            balancesRaw = new uint256[](0);
+        }
     }
 
     function getPoolType(
@@ -402,7 +412,7 @@ contract BalancerV3Quoter is Initializable, OwnableUpgradeable {
             // Ignore exception and proceed to the next check
         }
 
-        return "";
+        return "Others";
     }
 
     function getHooksConfig(
@@ -416,6 +426,23 @@ contract BalancerV3Quoter is Initializable, OwnableUpgradeable {
         string memory needle
     ) internal pure virtual returns (bool) {
         return indexOf(haystack, needle) >= 0;
+    }
+
+    function getTokens(
+        address pool
+    ) public view returns (IERC20[] memory tokens) {
+        return IBalancerPool(pool).getTokens();
+    }
+
+    function getTokenAddresses(
+        address pool
+    ) public view returns (address[] memory tokenAddresses) {
+        IERC20[] memory tokens = getTokens(pool);
+        tokenAddresses = new address[](tokens.length);
+        for (uint256 i = 0; i < tokens.length; i++) {
+            tokenAddresses[i] = address(tokens[i]);
+        }
+        return tokenAddresses;
     }
 
     function getTotalSupply(address pool) public view returns (uint256) {
