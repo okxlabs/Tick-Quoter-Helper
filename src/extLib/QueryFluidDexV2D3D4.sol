@@ -43,15 +43,6 @@ library QueryFluidDexV2D3D4 {
         uint256 initPoint2;
     }
 
-    // TODO get dexKey by dexType and dexId
-    function queryFluidDexV2DexKey(
-        address fluidDexV2,
-        uint256 dexType,
-        bytes32 dexId
-    ) public view returns (DexKey memory dexKey) {
-        
-    }
-
     function queryFluidDexV2ExchangePricesAndConfig(
         address liquidity,
         address token0,

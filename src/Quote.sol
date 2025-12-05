@@ -35,7 +35,7 @@ contract QueryData is OwnableUpgradeable {
     address public constant FLUID_LITE_DEPLOYER_CONTRACT = 0x0000000000000000000000000000000000000000;
     // FluidDexV2 contract addresses
     address public constant FLUID_LIQUIDITY = 0x52Aa899454998Be5b000Ad077a46Bbe360F4e497; // For both FluidDexV2 D3 and D4
-    address public constant FLUID_DEX_V2 = 0x04e9FF525b6541Ca4a0Dca3326b79547f9057E15; // For both FluidDexV2 D3 and D4
+    address public constant FLUID_DEX_V2 = 0x7822B3944B1a68B231a6e7F55B57967F28BB369e; // For both FluidDexV2 D3 and D4
 
     function initialize() public initializer {
         __Ownable_init();
@@ -159,11 +159,6 @@ contract QueryData is OwnableUpgradeable {
     // Specifically for FluidLite
     function queryFluidLite(bytes8 dexId) public view returns (QueryFluidLite.DexKey memory dexKey, uint256 centerPrice, uint256 dexVariables, uint256 rangeShift, uint256 thresholdShift, uint256 centerPriceShift) {
         return QueryFluidLite.queryFluidLite(FLUID_LITE_DEX, FLUID_LITE_DEPLOYER_CONTRACT, dexId);
-    }
-
-    // Specifically for FluidDexV2D3D4
-    function queryFluidDexV2DexKey(uint256 dexType, bytes32 dexId) public view returns (QueryFluidDexV2D3D4.DexKey memory dexKey) {
-        return QueryFluidDexV2D3D4.queryFluidDexV2DexKey(FLUID_DEX_V2, dexType, dexId);
     }
 
     // Specifically for FluidDexV2D3D4
