@@ -47,15 +47,6 @@ $ anvil
 
 ### Deploy Steps
 
-**Quick Deploy (One Command)**
-
-```shell
-$ ./scripts/deploy.sh <chain>
-
-# Example:
-$ ./scripts/deploy.sh op
-```
-
 **Manual Steps**
 
 **1. Setup environment variables**
