@@ -69,7 +69,9 @@ via_ir = true
 ast = false
 no_storage_caching = false
 no_rpc_rate_limit = false
-use_literal_content = false
+metadata = true
+metadata_hash = "none"
+use_literal_content = true
 bytecode_hash = "ipfs"
 cbor_metadata = true
 sparse_mode = false
@@ -158,3 +160,25 @@ out = "utils/JsonBindings.sol"
 include = []
 exclude = []
 
+[rpc_endpoints]
+eth = "${ETH_RPC_URL}"
+bsc = "${BSC_RPC_URL}"
+monad = "${MONAD_RPC_URL}"
+base = "${BASE_RPC_URL}"
+op = "${OP_RPC_URL}"
+arb = "${ARB_RPC_URL}"
+polygon = "${POLYGON_RPC_URL}"
+blast = "${BLAST_RPC_URL}"
+avax = "${AVAX_RPC_URL}"
+unichain = "${UNICHAIN_RPC_URL}"
+
+[etherscan]
+eth = { key = "${ETHERSCAN_API_KEY}", url = "https://api.etherscan.io/v2/api?chainid=1" }
+bsc = { key = "${ETHERSCAN_API_KEY}", url = "https://api.etherscan.io/v2/api?chainid=56" }
+base = { key = "${ETHERSCAN_API_KEY}", url = "https://api.etherscan.io/v2/api?chainid=8453" }
+op = { key = "${ETHERSCAN_API_KEY}", url = "https://api.etherscan.io/v2/api?chainid=10" }
+arb = { key = "${ETHERSCAN_API_KEY}", url = "https://api.etherscan.io/v2/api?chainid=42161" }
+polygon = { key = "${ETHERSCAN_API_KEY}", url = "https://api.etherscan.io/v2/api?chainid=137" }
+blast = { key = "${ETHERSCAN_API_KEY}", url = "https://api.etherscan.io/v2/api?chainid=81457" }
+avax = { key = "${ETHERSCAN_API_KEY}", url = "https://api.etherscan.io/v2/api?chainid=43114" }
+unichain = { key = "${ETHERSCAN_API_KEY}", url = "https://api.etherscan.io/v2/api?chainid=130" }
