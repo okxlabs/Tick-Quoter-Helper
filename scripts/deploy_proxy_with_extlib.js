@@ -39,10 +39,15 @@ async function main() {
   await queryPancake.deployed();
   console.log("QueryPancakeInfinityLBReserveSuperCompact deployed at:", queryPancake.address);
 
-  const QueryCurveSuperCompact = await ethers.getContractFactory("QueryCurveSuperCompact");
-  const queryCurve = await QueryCurveSuperCompact.deploy();
-  await queryCurve.deployed();
-  console.log("QueryCurveSuperCompact deployed at:", queryCurve.address);
+  const QueryFluid = await ethers.getContractFactory("QueryFluid");
+  const queryFluid = await QueryFluid.deploy();
+  await queryFluid.deployed();
+  console.log("QueryFluid deployed at:", queryFluid.address);
+
+  const QueryFluidLite = await ethers.getContractFactory("QueryFluidLite");
+  const queryFluidLite = await QueryFluidLite.deploy();
+  await queryFluidLite.deployed();
+  console.log("QueryFluidLite deployed at:", queryFluidLite.address);
 
   // Deploy QueryData with library links
   console.log("\nDeploying QueryData with library links...");
@@ -55,7 +60,8 @@ async function main() {
       "src/extLib/QueryUniv4TicksSuperCompact.sol:QueryUniv4TicksSuperCompact": queryUniv4.address,
       "src/extLib/QueryZoraTicksSuperCompact.sol:QueryZoraTicksSuperCompact": queryZora.address,
       "src/extLib/QueryPancakeInfinityLBReserveSuperCompact.sol:QueryPancakeInfinityLBReserveSuperCompact": queryPancake.address,
-      "src/extLib/QueryCurveSuperCompact.sol:QueryCurveSuperCompact": queryCurve.address,
+      "src/extLib/QueryFluid.sol:QueryFluid": queryFluid.address,
+      "src/extLib/QueryFluidLite.sol:QueryFluidLite": queryFluidLite.address,
     }
   });
 
