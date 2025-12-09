@@ -51,7 +51,7 @@ $ anvil
 
 **1. Setup environment variables**
 
-Copy `.env.example` to `.env` and fill in your values:
+Fill in your values in `.env`:
 
 ```shell
 PRIVATE_KEY=your_private_key

@@ -112,8 +112,10 @@ function main() {
   const poolManager = toChecksumAddress(config.uniswapV4.poolManager);
   const stateView = toChecksumAddress(config.uniswapV4.stateView);
   const positionManager = toChecksumAddress(config.uniswapV4.positionManager);
-  const fluidDex = toChecksumAddress(config.fluidLite?.dex || '0x0000000000000000000000000000000000000000');
-  const fluidDeployer = toChecksumAddress(config.fluidLite?.deployerContract || '0x0000000000000000000000000000000000000000');
+  const fluidLiteDex = toChecksumAddress(config.fluidLite?.dex || '0x0000000000000000000000000000000000000000');
+  const fluidLiteDeployer = toChecksumAddress(config.fluidLite?.deployerContract || '0x0000000000000000000000000000000000000000');
+  const fluidLiquidity = toChecksumAddress(config.fluid?.liquidity || '0x0000000000000000000000000000000000000000');
+  const fluidDexV2 = toChecksumAddress(config.fluid?.dexV2 || '0x0000000000000000000000000000000000000000');
 
   console.log(`Preparing Quote.sol for ${chain.toUpperCase()} (Chain ID: ${config.chainId})`);
   console.log('');
@@ -121,8 +123,10 @@ function main() {
   console.log(`  POOL_MANAGER:                  ${poolManager}`);
   console.log(`  STATE_VIEW:                    ${stateView}`);
   console.log(`  POSITION_MANAGER:              ${positionManager}`);
-  console.log(`  FLUID_LITE_DEX:                ${fluidDex}`);
-  console.log(`  FLUID_LITE_DEPLOYER_CONTRACT:  ${fluidDeployer}`);
+  console.log(`  FLUID_LITE_DEX:                ${fluidLiteDex}`);
+  console.log(`  FLUID_LITE_DEPLOYER_CONTRACT:  ${fluidLiteDeployer}`);
+  console.log(`  FLUID_LIQUIDITY:               ${fluidLiquidity}`);
+  console.log(`  FLUID_DEX_V2:                  ${fluidDexV2}`);
   console.log('');
 
   // Read Quote.sol
@@ -146,12 +150,22 @@ function main() {
   
   content = content.replace(
     /address public constant FLUID_LITE_DEX = 0x[a-fA-F0-9]{40};/,
-    `address public constant FLUID_LITE_DEX = ${fluidDex};`
+    `address public constant FLUID_LITE_DEX = ${fluidLiteDex};`
   );
   
   content = content.replace(
     /address public constant FLUID_LITE_DEPLOYER_CONTRACT = 0x[a-fA-F0-9]{40};/,
-    `address public constant FLUID_LITE_DEPLOYER_CONTRACT = ${fluidDeployer};`
+    `address public constant FLUID_LITE_DEPLOYER_CONTRACT = ${fluidLiteDeployer};`
+  );
+
+  content = content.replace(
+    /address public constant FLUID_LIQUIDITY = 0x[a-fA-F0-9]{40};/,
+    `address public constant FLUID_LIQUIDITY = ${fluidLiquidity};`
+  );
+
+  content = content.replace(
+    /address public constant FLUID_DEX_V2 = 0x[a-fA-F0-9]{40};/,
+    `address public constant FLUID_DEX_V2 = ${fluidDexV2};`
   );
 
   // Update comment

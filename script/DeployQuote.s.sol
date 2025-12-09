@@ -12,7 +12,6 @@ contract Deploy is Script {
     address deployer;
     
     function run() public {
-        // 设置私钥
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         deployer = vm.addr(deployerPrivateKey);
         
@@ -21,18 +20,14 @@ contract Deploy is Script {
         
         vm.startBroadcast(deployer);
         
-        // 直接部署 QueryData 合约
-        // library 会自动被内联编译
         console2.log("Deploying QueryData contract...");
         quoter = new QueryData();
         console2.log("QueryData deployed at:", address(quoter));
         
-        // 初始化合约
         console2.log("Initializing QueryData...");
         quoter.initialize();
         console2.log("QueryData initialized successfully");
         
-        // 打印最终信息
         console2.log("=================================");
         console2.log("Deployment Summary:");
         console2.log("QueryData address:", address(quoter));
