@@ -177,7 +177,6 @@ library QueryFluidDexV2D3D4 {
         return int24(currentTick_);
     }
 
-    // 获取bitmap数据
     function _getTickBitmap(
         address fluidDexV2_,
         uint256 dexType_,
