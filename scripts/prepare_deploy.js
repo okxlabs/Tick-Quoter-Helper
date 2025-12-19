@@ -31,7 +31,7 @@ function toChecksumAddress(address) {
     return getAddressFn(address.toLowerCase());
   }
   
-  // Fallback: normalize to lowercase (safe for Solidity literals; avoids any incorrect checksum algorithm).
+  // Fallback: normalize to lowercase.
   const addr = address.replace(/^0x/i, '');
   if (addr.length !== 40) {
     throw new Error(`Invalid address length: ${address}`);
@@ -68,12 +68,6 @@ function main() {
   
   if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
     console.log('Usage: node scripts/prepare_deploy.js <chain>');
-    console.log('');
-    console.log('Supported chains:');
-    console.log('  eth, bsc, monad, base, op, arb, polygon, blast, avax, unichain');
-    console.log('');
-    console.log('Example:');
-    console.log('  node scripts/prepare_deploy.js eth');
     process.exit(0);
   }
 
