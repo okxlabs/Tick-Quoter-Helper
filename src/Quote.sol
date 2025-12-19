@@ -26,7 +26,7 @@ import "./extLib/QueryFluidLite.sol";
 import "./extLib/QueryFluidDexV2D3D4.sol";
 
 contract QueryData is OwnableUpgradeable {
-    // Core contract addresses (Base network)
+    // Core contract addresses
     address public constant POOL_MANAGER = 0x498581fF718922c3f8e6A244956aF099B2652b2b;
     address public constant STATE_VIEW = 0xA3c0c9b65baD0b08107Aa264b0f3dB444b867A71;
     address public constant POSITION_MANAGER = 0x7C5f5A4bBd8fD63184577525326123B519429bDc;
@@ -34,8 +34,8 @@ contract QueryData is OwnableUpgradeable {
     address public constant FLUID_LITE_DEX = 0x0000000000000000000000000000000000000000;
     address public constant FLUID_LITE_DEPLOYER_CONTRACT = 0x0000000000000000000000000000000000000000;
     // FluidDexV2 contract addresses
-    address public constant FLUID_LIQUIDITY = 0x52Aa899454998Be5b000Ad077a46Bbe360F4e497; // For both FluidDexV2 D3 and D4
-    address public constant FLUID_DEX_V2 = 0x7822B3944B1a68B231a6e7F55B57967F28BB369e; // For both FluidDexV2 D3 and D4
+    address public constant FLUID_LIQUIDITY = 0x0000000000000000000000000000000000000000; // For both FluidDexV2 D3 and D4
+    address public constant FLUID_DEX_V2 = 0x0000000000000000000000000000000000000000; // For both FluidDexV2 D3 and D4
 
     function initialize() public initializer {
         __Ownable_init();
