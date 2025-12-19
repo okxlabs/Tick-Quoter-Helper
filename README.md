@@ -98,6 +98,34 @@ $ node scripts/post_deploy.js <chain>
 
 See `scripts/deployed/<chain>/index.js` for deployed contract addresses on each chain.
 
+### Upgrade Proxy
+
+This repo uses **OpenZeppelin TransparentUpgradeableProxy + ProxyAdmin**. To upgrade, you only need:
+
+- **proxy**
+- **proxyAdmin**
+- **new implementation**
+
+These are recorded in `scripts/deployed/<chain>/index.js`.
+
+**1. (Optional) Update `script/UpgradeProxy.s.sol` constants from config**
+
+This will replace `PROXY` / `PROXY_ADMIN` / `NEW_IMPLEMENTATION` in `script/UpgradeProxy.s.sol` using the addresses in `scripts/deployed/<chain>/index.js`.
+
+```shell
+# Use implementation from index.js as NEW_IMPLEMENTATION
+node scripts/replace.js <chain>
+
+# Or explicitly set NEW_IMPLEMENTATION
+node scripts/replace.js <chain> --new-impl 0xYourNewImplementation
+```
+
+**2. Run upgrade**
+
+```shell
+forge script script/UpgradeProxy.s.sol:UpgradeProxy --rpc-url $RPC_URL --broadcast -vvvv
+```
+
 ### Cast
 
 ```shell
