@@ -31,22 +31,15 @@ function toChecksumAddress(address) {
     return getAddressFn(address.toLowerCase());
   }
   
-  // Fallback: use simple keccak256 implementation
-  const { createHash } = require('crypto');
-  const addr = address.toLowerCase().replace('0x', '');
-  const hash = createHash('sha3-256').update(Buffer.from(addr, 'utf8')).digest('hex');
-  
-  let checksummed = '0x';
-  for (let i = 0; i < 40; i++) {
-    if (parseInt(hash[i], 16) >= 8) {
-      checksummed += addr[i].toUpperCase();
-    } else {
-      checksummed += addr[i];
-    }
+  // Fallback: normalize to lowercase (safe for Solidity literals; avoids any incorrect checksum algorithm).
+  const addr = address.replace(/^0x/i, '');
+  if (addr.length !== 40) {
+    throw new Error(`Invalid address length: ${address}`);
   }
-  
-  console.warn(`Warning: Using fallback checksum. Run: npm install ethers`);
-  return checksummed;
+
+  const normalized = `0x${addr.toLowerCase()}`;
+  console.warn('Warning: ethers not found; using lowercase address normalization (no EIP-55 checksum).');
+  return normalized;
 }
 
 // Supported chains
@@ -109,9 +102,9 @@ function main() {
   }
 
   // Apply checksum to all addresses
-  const poolManager = toChecksumAddress(config.uniswapV4.poolManager);
-  const stateView = toChecksumAddress(config.uniswapV4.stateView);
-  const positionManager = toChecksumAddress(config.uniswapV4.positionManager);
+  const poolManager = toChecksumAddress(config.uniswapV4.poolManager || '0x0000000000000000000000000000000000000000');
+  const stateView = toChecksumAddress(config.uniswapV4.stateView || '0x0000000000000000000000000000000000000000');
+  const positionManager = toChecksumAddress(config.uniswapV4.positionManager || '0x0000000000000000000000000000000000000000');
   const fluidLiteDex = toChecksumAddress(config.fluidLite?.dex || '0x0000000000000000000000000000000000000000');
   const fluidLiteDeployer = toChecksumAddress(config.fluidLite?.deployerContract || '0x0000000000000000000000000000000000000000');
   const fluidLiquidity = toChecksumAddress(config.fluid?.liquidity || '0x0000000000000000000000000000000000000000');
@@ -166,25 +159,6 @@ function main() {
   content = content.replace(
     /address public constant FLUID_DEX_V2 = 0x[a-fA-F0-9]{40};/,
     `address public constant FLUID_DEX_V2 = ${fluidDexV2};`
-  );
-
-  // Update comment
-  const chainNames = {
-    eth: 'Ethereum Mainnet',
-    bsc: 'BNB Smart Chain',
-    monad: 'Monad',
-    base: 'Base',
-    op: 'Optimism',
-    arb: 'Arbitrum One',
-    polygon: 'Polygon',
-    blast: 'Blast',
-    avax: 'Avalanche C-Chain',
-    unichain: 'Unichain',
-  };
-  
-  content = content.replace(
-    /\/\/ Core contract addresses \([^)]+\)/,
-    `// Core contract addresses (${chainNames[chain] || chain})`
   );
 
   // Write back
