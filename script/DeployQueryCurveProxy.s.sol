@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {Script, console} from "forge-std/Script.sol";
-import {ERC1967Proxy} from "lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {QueryCurveUpgradeable} from "../src/Curve/QueryCurveUpgradeable.sol";
 import "forge-std/console2.sol";
 

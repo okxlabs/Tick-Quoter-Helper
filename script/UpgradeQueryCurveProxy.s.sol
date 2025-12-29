@@ -2,9 +2,17 @@
 pragma solidity 0.8.20;
 
 import "forge-std/test.sol";
-import {ERC1967Proxy} from "lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import {QueryCurveUpgradeable, QueryCurveUpgradeableV2, TokenInfo} from "../src/Curve/QueryCurveUpgradeable.sol";
-import {QueryCurveUpgradeableBase} from "../src/Curve/QueryCurveUpgradeableBase.sol";
+import {
+    ERC1967Proxy
+} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {
+    QueryCurveUpgradeable,
+    QueryCurveUpgradeableV2,
+    TokenInfo
+} from "../src/Curve/QueryCurveUpgradeable.sol";
+import {
+    QueryCurveUpgradeableBase
+} from "../src/Curve/QueryCurveUpgradeableBase.sol";
 import "forge-std/console2.sol";
 
 interface ICurveMetaRegister {
@@ -14,10 +22,14 @@ interface ICurveMetaRegister {
 
 contract Deploy is Test {
     address deployer = vm.rememberKey(vm.envUint("PRIVATE_KEY"));
-    address internal constant proxy = 0x5B1cDde612852EC8eA070de3c29CF0c9f0E6700B;
+    address internal constant proxy =
+        0x5B1cDde612852EC8eA070de3c29CF0c9f0E6700B;
 
     function run() public {
-        require(deployer == 0x591342772bBc7D0630EFBdeA3C0b704E7ADdad17, "wrong deployer! change the private key");
+        require(
+            deployer == 0x591342772bBc7D0630EFBdeA3C0b704E7ADdad17,
+            "wrong deployer! change the private key"
+        );
         vm.createSelectFork(vm.envString("ETH_RPC_URL"));
         vm.startBroadcast(deployer);
         console2.log("block.chainID", block.chainid);
@@ -41,7 +53,9 @@ contract Deploy is Test {
         address register = QueryCurveUpgradeable(proxy).meta_register();
         console.log("meta_register:", register);
         address pool = ICurveMetaRegister(register).pool_list(0);
-        uint256[8] memory balances = QueryCurveUpgradeable(proxy).get_balances(pool);
+        uint256[8] memory balances = QueryCurveUpgradeable(proxy).get_balances(
+            pool
+        );
         console.log("get_balances from pool:", pool, balances[0]);
 
         vm.stopBroadcast();

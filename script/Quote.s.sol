@@ -66,8 +66,9 @@ contract Deploy is Test {
         vm.startBroadcast(deployer);
         require(block.chainid == 56, "must be right chain");
         // For Unichain deployment, Pancake Infinity addresses are not needed (set to 0)
-        // quoter = new QueryData(stateView, positionManager, poolManager);
-        // console2.log("query address", address(quoter));
+        quoter = new QueryData();
+        quoter.initialize();
+        console2.log("query address", address(quoter));
         vm.stopBroadcast();
     }
 }
