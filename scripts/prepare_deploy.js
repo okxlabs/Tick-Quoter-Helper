@@ -60,6 +60,7 @@ const CHAIN_ALIASES = {
   avax: 'avax',
   avalanche: 'avax',
   unichain: 'unichain',
+  xlayer: 'xlayer',
 };
 
 

@@ -16,6 +16,7 @@ const CHAINS = {
   blast: { chainId: 81457, verifierUrl: 'https://api.etherscan.io/v2/api?chainid=81457', verifier: 'etherscan' },
   avax: { chainId: 43114, verifierUrl: 'https://api.etherscan.io/v2/api?chainid=43114', verifier: 'etherscan' },
   unichain: { chainId: 130, verifierUrl: 'https://api.etherscan.io/v2/api?chainid=130', verifier: 'etherscan' },
+  xlayer: { chainId: 196, verifierUrl: 'https://www.oklink.com/api/v5/explorer/contract/verify-source-code-plugin/xlayer', verifier: 'oklink' },
 };
 
 const CHAIN_ALIASES = {
@@ -29,6 +30,7 @@ const CHAIN_ALIASES = {
   blast: 'blast',
   avax: 'avax', avalanche: 'avax',
   unichain: 'unichain',
+  xlayer: 'xlayer',
 };
 
 // Library name mapping
@@ -116,6 +118,18 @@ function generateVerifyCommand(chain, addresses, chainConfig) {
     .map(([name, addr]) => `  --libraries ${LIB_MAPPING[name]}:${addr}`)
     .join(' \\\n');
 
+  if (chain === 'xlayer') {
+    return `forge verify-contract \\
+  ${addresses.implementation} \\
+  src/Quote.sol:QueryData \\
+  --verifier ${chainConfig.verifier} \\
+  --verifier-url "${chainConfig.verifierUrl}" \\
+  --num-of-optimizations 200 \\
+  --compiler-version v0.8.17+commit.8df45f5f \\
+${libs} \\
+  --watch`;
+  }
+
   if (chainConfig.verifier === 'sourcify') {
     return `forge verify-contract \\
   --rpc-url ${chain} \\
@@ -149,7 +163,7 @@ function main() {
     console.log('Reads deployment data from broadcast/ and updates index.js');
     console.log('');
     console.log('Supported chains:');
-    console.log('  eth, bsc, monad, base, op, arb, polygon, blast, avax, unichain');
+    console.log('  eth, bsc, monad, base, op, arb, polygon, blast, avax, unichain, xlayer');
     process.exit(0);
   }
 
@@ -216,9 +230,13 @@ function main() {
     console.log(`  --broadcast \\`);
     if (chainConfig.verifier === 'etherscan') {
       console.log(`  --verify \\`);
-      console.log(`  --verifier etherscan \\`);
+      console.log(`  --verifier ${chainConfig.verifier} \\`);
       console.log(`  --verifier-url "${chainConfig.verifierUrl}" \\`);
       console.log(`  --etherscan-api-key $ETHERSCAN_API_KEY \\`);
+    } else if (chainConfig.verifier === 'oklink') {
+      console.log(`  --verify \\`);
+      console.log(`  --verifier ${chainConfig.verifier} \\`);
+      console.log(`  --verifier-url "${chainConfig.verifierUrl}" \\`);
     }
     console.log(`  -vvvv`);
     console.log('');
