@@ -16,5 +16,23 @@
       "name": "release-v4.8",
       "rev": "58fa0f81c4036f1a3b616fdffad2fd27e5d5ce21"
     }
+  },
+  "lib/openzeppelin-contracts-upgradeable-v5_0": {
+    "tag": {
+      "name": "v5.0.2",
+      "rev": "723f8cab09cdae1aca9ec9cc1cfa040c2d4b06c1"
+    }
+  },
+  "lib/openzeppelin-contracts-v4_5": {
+    "tag": {
+      "name": "v4.5.0",
+      "rev": "a5445b0afb8b350417b6e6ab3160554967bc151f"
+    }
+  },
+  "lib/openzeppelin-contracts-v5_0": {
+    "tag": {
+      "name": "v5.0.2",
+      "rev": "dbb6104ce834628e473d2173bbc9d47f81a9eec3"
+    }
   }
 }

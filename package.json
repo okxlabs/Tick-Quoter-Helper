@@ -14,15 +14,21 @@
     "@nomicfoundation/hardhat-network-helpers": "^1.1.0",
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
     "@nomicfoundation/hardhat-verify": "^2.1.1",
-    "@openzeppelin/hardhat-upgrades": "^2.4.3",
+    "@openzeppelin/hardhat-upgrades": "^3",
     "@typechain/ethers-v6": "^0.5.1",
     "@typechain/hardhat": "^9.1.0",
     "@types/mocha": "^10.0.10",
     "chai": "^4.5.0",
+    "ethers": "^6",
     "hardhat": "^2.19.4",
     "ts-node": "^10.9.2"
   },
   "dependencies": {
-    "@openzeppelin/contracts-upgradeable": "^4.9.5"
+    "@openzeppelin/contracts-upgradeable": "^4.9.5",
+    "dotenv": "^17.2.3",
+    "hardhat-gas-reporter": "^1.0.8",
+    "solidity-coverage": "^0.8.1",
+    "typechain": "^8.3.0",
+    "typescript": ">=4.5.0"
   }
 }

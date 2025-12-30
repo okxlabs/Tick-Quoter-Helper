@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.17;
+pragma solidity 0.8.20;
 
 import {
     QueryCurveUpgradeableV2,
@@ -10,6 +10,19 @@ import {
     TokenInfo,
     IERC20
 } from "./QueryCurveUpgradeable.sol";
+
+// https://etherscan.io/address/0x027B40F5917FCd0eac57d7015e120096A5F92ca9#code
+address constant TNG_VIEW_ADDRESS = 0x35048188c02cbc9239e1e5ecb3761eF9dfDcD31f;
+address constant TNG_MATH_ADDRESS = 0x79839c2D74531A8222C0F555865aAc1834e82e51;
+
+interface ICurveTNGPool {
+    function VIEW() external view returns (address);
+    function MATH() external view returns (address);
+}
+
+interface ICurveTNGMath {
+    function version() external view returns (string memory);
+}
 
 interface ICurveMainBaseRegistry {
     function get_underlying_balances(address _pool) external view returns (uint256[8] memory);
@@ -121,7 +134,7 @@ contract QueryCurveUpgradeableEth is QueryCurveUpgradeableV2 {
             uint256[] memory price_scale
         )
     {
-        //params[0] 1-v1  2-v2  3-NG
+        //params[0] 1-v1  2-v2  3-NG  4-TNG  5-Unknown
         name = 1;
         gamma = 0;
         D = 0;
@@ -135,7 +148,6 @@ contract QueryCurveUpgradeableEth is QueryCurveUpgradeableV2 {
         price_scale = new uint256[](n - 1);
         try ICurveV2Pool(pool).gamma() returns (uint256 result0) {
             gamma = result0;
-            name = 2;
             D = ICurveV2Pool(pool).D();
             if (n > 2) {
                 for (uint256 i = 0; i < n - 1; i++) {
@@ -147,6 +159,22 @@ contract QueryCurveUpgradeableEth is QueryCurveUpgradeableV2 {
             fee_gamma = ICurveV2Pool(pool).fee_gamma();
             mid_fee = ICurveV2Pool(pool).mid_fee();
             out_fee = ICurveV2Pool(pool).out_fee();
+            (bool success, bytes memory data) = pool.staticcall(abi.encodeWithSelector(ICurveTNGPool.MATH.selector));
+            if (success && data.length >= 32) {
+                address mathAddress = abi.decode(data, (address));
+                if (mathAddress == TNG_MATH_ADDRESS) {
+                    string memory version = ICurveTNGMath(mathAddress).version();
+                    if (keccak256(bytes(version)) == keccak256(bytes("v0.1.0"))) {
+                        name = 4;
+                    } else {
+                        name = 5;
+                    }
+                } else {
+                    name = 2;
+                }
+            } else {
+                name = 2;
+            }
         } catch {
             price = get_virtual_price(pool);
             try ICurveNGPool(pool).offpeg_fee_multiplier() returns (uint256 result1) {
