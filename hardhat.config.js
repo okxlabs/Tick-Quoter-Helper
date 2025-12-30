@@ -58,9 +58,33 @@ module.exports = {
       url: "https://rpc.hyperliquid.xyz/evm",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 999
+    },
+    stable: {
+      url: "https://rpc.stable.xyz",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 988
     }
   },
   etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY,
-  },
+    apiKey: {
+      base: process.env.BASESCAN_API_KEY || "",
+      bsc: process.env.BSCSCAN_API_KEY || "",
+      mainnet: process.env.ETHERSCAN_API_KEY || "",
+      arbitrumOne: process.env.ARBISCAN_API_KEY || "",
+      optimisticEthereum: process.env.OPTIMISM_API_KEY || "",
+      polygon: process.env.POLYGONSCAN_API_KEY || "",
+      hypeevm: process.env.HYPEEVM_API_KEY || "",
+      stable: process.env.ETHERSCAN_API_KEY || "",
+    },
+    customChains: [
+      {
+        network: "stable",
+        chainId: 988,
+        urls: {
+          apiURL: "https://api.etherscan.io/v2/api",
+          browserURL: "https://stablescan.xyz/"
+        }
+      }
+    ]
+  }
 };

@@ -174,6 +174,7 @@ polygon = "${POLYGON_RPC_URL}"
 blast = "${BLAST_RPC_URL}"
 avax = "${AVAX_RPC_URL}"
 unichain = "${UNICHAIN_RPC_URL}"
+xlayer = "${XLAYER_RPC_URL}"
 
 [etherscan]
 eth = { key = "${ETHERSCAN_API_KEY}", url = "https://api.etherscan.io/v2/api?chainid=1" }
@@ -185,3 +186,6 @@ polygon = { key = "${ETHERSCAN_API_KEY}", url = "https://api.etherscan.io/v2/api
 blast = { key = "${ETHERSCAN_API_KEY}", url = "https://api.etherscan.io/v2/api?chainid=81457" }
 avax = { key = "${ETHERSCAN_API_KEY}", url = "https://api.etherscan.io/v2/api?chainid=43114" }
 unichain = { key = "${ETHERSCAN_API_KEY}", url = "https://api.etherscan.io/v2/api?chainid=130" }
+
+[oklink]
+xlayer = { url = "https://www.oklink.com/api/v5/explorer/contract/verify-source-code-plugin/xlayer" }
