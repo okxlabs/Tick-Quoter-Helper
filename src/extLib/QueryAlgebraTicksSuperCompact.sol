@@ -12,6 +12,10 @@ import "../interface/IUniswapV3Pool.sol";
 import "../interface/IZora.sol";
 import "../interface/IZumiPool.sol";
 
+/**
+ * @title QueryAlgebraTicksSuperCompact
+ * @notice Query tick data from Algebra pools. Each tick encoded as 32 bytes (tick << 128 | liquidityNet).
+ */
 library QueryAlgebraTicksSuperCompact {
     int24 internal constant MIN_TICK_MINUS_1 = -887_272 - 1;
     int24 internal constant MAX_TICK_PLUS_1 = 887_272 + 1;
@@ -27,6 +31,7 @@ library QueryAlgebraTicksSuperCompact {
         uint256 initPoint2;
     }
 
+    /// @notice Algebra V1.9 pools - tick bitmap query, tickSpacing=1, full range scan
     function queryAlgebraTicksSuperCompact(address pool, uint256 len) public view returns (bytes memory) {
         SuperVar memory tmp;
 
@@ -121,6 +126,7 @@ library QueryAlgebraTicksSuperCompact {
         return tickInfo;
     }
 
+    /// @notice Algebra pools - linked list traversal via prevTick/nextTick, 9-return-value ticks()
     function queryAlgebraTicksSuperCompact2(address pool, uint256 iteration) public view returns (bytes memory) {
         int24 currTick;
         {
@@ -173,6 +179,73 @@ library QueryAlgebraTicksSuperCompact {
         return tickInfo;
     }
 
+    /// @notice Algebra Integral pools - linked list traversal, 6-return-value ticks()
+    function queryAlgebraTicksSuperCompact2_v2(address pool, uint256 iteration) public view returns (bytes memory) {
+        int24 currTick;
+        // try to use prevTickGlobal() first, if not available, try to use globalState() instead
+        {
+            (bool s, bytes memory res) = pool.staticcall(abi.encodeWithSignature("prevTickGlobal()"));
+            if (s) {
+                currTick = abi.decode(res, (int24));
+            } else {
+                // prevTickGlobal() is not available, try to use globalState() instead
+                // (, currTick, , , , ) = IAlgebraPoolIntegral(pool).globalState();
+                (s, res) = pool.staticcall(abi.encodeWithSignature("globalState()"));
+                if (s) {
+                    assembly {
+                        currTick := mload(add(res, 64))
+                    }
+                }
+            }
+        }
+
+        int24 currTick2 = currTick;
+        uint256 threshold = iteration / 2;
+        // travel from left to right
+        bytes memory tickInfo;
+
+        while (currTick < MAX_TICK_PLUS_1 && iteration > threshold) {
+            (, int128 liquidityNet, int24 prevTick, int24 nextTick, , ) = IAlgebraPoolIntegral(pool).ticks(currTick);
+
+            int256 data = int256(uint256(int256(currTick)) << 128)
+                + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
+            tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+
+            if (currTick == nextTick) {
+                break;
+            }
+            currTick = nextTick;
+            iteration--;
+        }
+
+        // Skip initial tick (already processed above) by moving to prevTick first
+        {
+            (, , int24 prevTick, , , ) = IAlgebraPoolIntegral(pool).ticks(currTick2);
+            // if the current tick is the same as the previous tick, means no more previous ticks to process, return the result
+            if (currTick2 == prevTick) {
+                return tickInfo;
+            }
+            currTick2 = prevTick;
+        }
+
+        while (currTick2 > MIN_TICK_MINUS_1 && iteration > 0) {
+            (, int128 liquidityNet, int24 prevTick, int24 nextTick, , ) = IAlgebraPoolIntegral(pool).ticks(currTick2);
+
+            int256 data = int256(uint256(int256(currTick2)) << 128)
+                + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
+            tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+
+            if (currTick2 == prevTick) {
+                break;
+            }
+            currTick2 = prevTick;
+            iteration--;
+        }
+
+        return tickInfo;
+    }
+
+    /// @notice Algebra pools - tick bitmap query, dynamic tickSpacing, full range scan
     function queryAlgebraTicksSuperCompact3_back(address pool, uint256 len) public view returns (bytes memory) {
         SuperVar memory tmp;
         tmp.tickSpacing = IAlgebraPool(pool).tickSpacing();
@@ -271,6 +344,7 @@ library QueryAlgebraTicksSuperCompact {
         return tickInfo;
     }
 
+    /// @notice Algebra pools - tick bitmap query, tickSpacing=1, bounded range (len*200 each direction)
     function queryAlgebraTicksSuperCompact3(address pool, uint256 len) public view returns (bytes memory) {
         SuperVar memory tmp;
         tmp.tickSpacing = 1;
