@@ -182,7 +182,22 @@ library QueryAlgebraTicksSuperCompact {
     /// @notice Algebra Integral pools - linked list traversal, 6-return-value ticks()
     function queryAlgebraTicksSuperCompact2_v2(address pool, uint256 iteration) public view returns (bytes memory) {
         int24 currTick;
-        (, currTick, , , , ) = IAlgebraPoolIntegral(pool).globalState();
+        // try to use prevTickGlobal() first, if not available, try to use globalState() instead
+        {
+            (bool s, bytes memory res) = pool.staticcall(abi.encodeWithSignature("prevTickGlobal()"));
+            if (s) {
+                currTick = abi.decode(res, (int24));
+            } else {
+                // prevTickGlobal() is not available, try to use globalState() instead
+                // (, currTick, , , , ) = IAlgebraPoolIntegral(pool).globalState();
+                (s, res) = pool.staticcall(abi.encodeWithSignature("globalState()"));
+                if (s) {
+                    assembly {
+                        currTick := mload(add(res, 64))
+                    }
+                }
+            }
+        }
 
         int24 currTick2 = currTick;
         uint256 threshold = iteration / 2;
@@ -206,7 +221,11 @@ library QueryAlgebraTicksSuperCompact {
         // Skip initial tick (already processed above) by moving to prevTick first
         {
             (, , int24 prevTick, , , ) = IAlgebraPoolIntegral(pool).ticks(currTick2);
-            if (currTick2 != prevTick) currTick2 = prevTick;
+            // if the current tick is the same as the previous tick, means no more previous ticks to process, return the result
+            if (currTick2 == prevTick) {
+                return tickInfo;
+            }
+            currTick2 = prevTick;
         }
 
         while (currTick2 > MIN_TICK_MINUS_1 && iteration > 0) {

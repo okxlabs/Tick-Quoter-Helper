@@ -11,7 +11,7 @@ contract AlgebraIntegralTest is Test {
     address constant BLACK_HOLE_V3_POOL = 0x1B4d11Ab4658744714D1A6D6633247eFBd816be5;
 
     function setUp() public {
-        vm.createSelectFork("https://avax-mainnet.g.alchemy.com/v2/Vi9EBxKbLyTvKM3I2LXvsOV8f6fWsbrj", 75590154);
+        vm.createSelectFork(vm.envString("AVAX_RPC_URL"), 75590154);
         quoter = new QueryData();
         quoter.initialize();
     }
