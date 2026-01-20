@@ -88,6 +88,10 @@ contract QueryData is OwnableUpgradeable {
         return QueryAlgebraTicksSuperCompact.queryAlgebraTicksSuperCompact2(pool, len);
     }
 
+    function queryAlgebraTicksSuperCompact2_v2(address pool, uint256 len) public view returns (bytes memory) {
+        return QueryAlgebraTicksSuperCompact.queryAlgebraTicksSuperCompact2_v2(pool, len);
+    }
+
     function queryIzumiSuperCompact(address pool, uint256 len) public view returns (bytes memory, bytes memory) {
         return QueryIzumiSuperCompact.queryIzumiSuperCompact(pool, len);
     }
