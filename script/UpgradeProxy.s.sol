@@ -3,17 +3,15 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Script.sol";
 import "forge-std/console2.sol";
-import {ProxyAdmin} from "../lib/openzeppelin-contracts/contracts/proxy/transparent/ProxyAdmin.sol";
-import {ITransparentUpgradeableProxy} from "../lib/openzeppelin-contracts/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {ProxyAdmin} from "../lib/openzeppelin-contracts-v4_5/contracts/proxy/transparent/ProxyAdmin.sol";
+import {TransparentUpgradeableProxy} from "../lib/openzeppelin-contracts-v4_5/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 contract UpgradeProxy is Script {
-    // REPLACED BY scripts/replace.js
-    // We store 21-byte hex literals (0x00 + 20-byte address) to avoid checksum enforcement,
-    // then truncate back to 20 bytes via uint160(...).
-    address internal constant PROXY = address(uint160(0x00cc4739736420c1d6f3f5dbb53cd52e4ac0d06c9a));
-    address internal constant PROXY_ADMIN = address(uint160(0x00b18792ba1dbd677eb300660304e9e71e372da421));
-    address internal constant NEW_IMPLEMENTATION = address(uint160(0x00479b3862531135e4d4b9466ebdcfe4974ff16f94));
-    // Old Implementation: 0x643C607219513AaEdC96b78b152c71E3DB976ac7
+    // REPLACED BY scripts/sync_upgrade_constants.js
+    address internal constant PROXY = 0xC0FaB674fF7DdF8B891495bA9975B0Fe1dCaC735;
+    address internal constant PROXY_ADMIN = 0xDeEF773D61719a3181E35e9281600Db8bA063f71;
+    address internal constant NEW_IMPLEMENTATION = 0xb70FF46899ddEd5CD1018FA446D1E78dC0dD6210;
+    // Old Implementation: 0xd22caC235c9D2A8252b0e02985a6C67a959b21b0
 
     function run() public {
         uint256 deployerKey = vm.envUint("PRIVATE_KEY");
@@ -33,7 +31,7 @@ contract UpgradeProxy is Script {
         ProxyAdmin proxyAdmin = ProxyAdmin(PROXY_ADMIN);
 
         address currentImplementation =
-            proxyAdmin.getProxyImplementation(ITransparentUpgradeableProxy(payable(PROXY)));
+            proxyAdmin.getProxyImplementation(TransparentUpgradeableProxy(payable(PROXY)));
         console2.log("Current Implementation:", currentImplementation);
 
         address owner = proxyAdmin.owner();
@@ -43,11 +41,11 @@ contract UpgradeProxy is Script {
 
         vm.startBroadcast(deployerKey);
         console2.log("Executing upgrade...");
-        proxyAdmin.upgrade(ITransparentUpgradeableProxy(payable(PROXY)), NEW_IMPLEMENTATION);
+        proxyAdmin.upgrade(TransparentUpgradeableProxy(payable(PROXY)), NEW_IMPLEMENTATION);
         vm.stopBroadcast();
 
         address updatedImplementation =
-            proxyAdmin.getProxyImplementation(ITransparentUpgradeableProxy(payable(PROXY)));
+            proxyAdmin.getProxyImplementation(TransparentUpgradeableProxy(payable(PROXY)));
 
         console2.log("");
         console2.log("=========================================");

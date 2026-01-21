@@ -114,10 +114,10 @@ This will replace `PROXY` / `PROXY_ADMIN` / `NEW_IMPLEMENTATION` in `script/Upgr
 
 ```shell
 # Use implementation from index.js as NEW_IMPLEMENTATION
-node scripts/replace.js <chain>
+node scripts/sync_upgrade_constants.js <chain>
 
 # Or explicitly set NEW_IMPLEMENTATION
-node scripts/replace.js <chain> --new-impl 0xYourNewImplementation
+node scripts/sync_upgrade_constants.js <chain> --new-impl 0xYourNewImplementation
 ```
 
 **2. Run upgrade**

@@ -18,7 +18,6 @@ What it does:
 
 Notes:
   - If --new-impl is not provided, it will use the "implementation" field from index.js as NEW_IMPLEMENTATION.
-  - Address constants are emitted as address(uint160(0x00 + 20-byte-address)) to avoid checksum enforcement.
 `);
 }
 
@@ -56,14 +55,22 @@ function main() {
   const targetPath = readArg("--target") || path.join("script", "UpgradeProxy.s.sol");
   const src = fs.readFileSync(targetPath, "utf8");
 
-  // Prefix with 0x00 so Solidity treats it as an integer literal (not an address literal),
-  // then the script truncates it back via uint160(...).
-  const asNonAddressHex = (addr) => `0x00${addr.slice(2).toLowerCase()}`;
+  // Emit EIP-55 checksummed address literals (preferred by linters/tooling).
+  let getAddressFn = null;
+  try {
+    // eslint-disable-next-line global-require
+    const ethers = require("ethers");
+    getAddressFn = ethers.getAddress || (ethers.ethers && ethers.ethers.getAddress) || null;
+  } catch (_) {
+    // Ignore: will fall back to raw address.
+  }
+
+  const asAddressLiteral = (addr) => (getAddressFn ? getAddressFn(addr) : addr);
 
   const replacement = {
-    PROXY: `address internal constant PROXY = address(uint160(${asNonAddressHex(proxy)}));`,
-    PROXY_ADMIN: `address internal constant PROXY_ADMIN = address(uint160(${asNonAddressHex(proxyAdmin)}));`,
-    NEW_IMPLEMENTATION: `address internal constant NEW_IMPLEMENTATION = address(uint160(${asNonAddressHex(newImpl)}));`,
+    PROXY: `address internal constant PROXY = ${asAddressLiteral(proxy)};`,
+    PROXY_ADMIN: `address internal constant PROXY_ADMIN = ${asAddressLiteral(proxyAdmin)};`,
+    NEW_IMPLEMENTATION: `address internal constant NEW_IMPLEMENTATION = ${asAddressLiteral(newImpl)};`,
   };
 
   const out = src
