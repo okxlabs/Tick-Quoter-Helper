@@ -43,18 +43,15 @@ library QueryAlgebraTicksSuperCompact {
             }
             tmp.currTick = currTick;
         }
-        tmp.right = tmp.currTick / int24(256);
+        // Calculate starting word/bit position aligned with Uniswap V3 TickBitmap.position()
+        // (tickSpacing=1 in this function).
+        int24 compressed = tmp.currTick;
+        tmp.right = compressed >> 8;
         tmp.leftMost = -887_272 / int24(256) - 2;
         tmp.rightMost = 887_272 / int24(256) + 1;
 
-        if (tmp.currTick < 0) {
-            tmp.initPoint = (256 - (uint256(int256(-tmp.currTick)) % 256)) % 256;
-        } else {
-            tmp.initPoint = uint256(int256(tmp.currTick)) % 256;
-        }
+        tmp.initPoint = uint256(uint256(int256(compressed)) & 0xff);
         tmp.initPoint2 = tmp.initPoint;
-
-        if (tmp.currTick < 0) tmp.right--;
 
         bytes memory tickInfo;
 
@@ -258,21 +255,18 @@ library QueryAlgebraTicksSuperCompact {
             }
             tmp.currTick = currTick;
         }
-        tmp.right = tmp.currTick / tmp.tickSpacing / int24(256);
+        // Calculate starting word/bit position aligned with Uniswap V3 TickBitmap.position().
+        // NOTE: Solidity division truncates toward zero, so negative ticks need floor adjustment.
+        int24 compressed = tmp.currTick / tmp.tickSpacing;
+        if (tmp.currTick < 0 && (tmp.currTick % tmp.tickSpacing != 0)) {
+            compressed--;
+        }
+        tmp.right = compressed >> 8;
         tmp.leftMost = -887_272 / tmp.tickSpacing / int24(256) - 2;
         tmp.rightMost = 887_272 / tmp.tickSpacing / int24(256) + 1;
 
-        if (tmp.currTick < 0) {
-            tmp.initPoint = uint256(
-                int256(tmp.currTick) / int256(tmp.tickSpacing)
-                    - (int256(tmp.currTick) / int256(tmp.tickSpacing) / 256 - 1) * 256
-            ) % 256;
-        } else {
-            tmp.initPoint = (uint256(int256(tmp.currTick)) / uint256(int256(tmp.tickSpacing))) % 256;
-        }
+        tmp.initPoint = uint256(uint256(int256(compressed)) & 0xff);
         tmp.initPoint2 = tmp.initPoint;
-
-        if (tmp.currTick < 0) tmp.right--;
 
         bytes memory tickInfo;
 
@@ -358,22 +352,18 @@ library QueryAlgebraTicksSuperCompact {
             tmp.currTick = currTick;
         }
         int24 step = int24(int256(len)) * 200;
-        tmp.right = tmp.currTick / tmp.tickSpacing / int24(256);
+        // Calculate starting word/bit position aligned with Uniswap V3 TickBitmap.position().
+        // NOTE: Solidity division truncates toward zero, so negative ticks need floor adjustment.
+        int24 compressed = tmp.currTick / tmp.tickSpacing;
+        if (tmp.currTick < 0 && (tmp.currTick % tmp.tickSpacing != 0)) {
+            compressed--;
+        }
+        tmp.right = compressed >> 8;
         tmp.leftMost = (tmp.currTick - step) / tmp.tickSpacing / int24(256) - 2;
         tmp.rightMost = (tmp.currTick + step) / tmp.tickSpacing / int24(256) + 1;
 
-        if (tmp.currTick < 0) {
-            tmp.initPoint = uint256(
-                int256(tmp.currTick) / int256(tmp.tickSpacing)
-                    - (int256(tmp.currTick) / int256(tmp.tickSpacing) / 256 - 1) * 256
-            ) % 256;
-        } else {
-            tmp.initPoint = (uint256(int256(tmp.currTick)) / uint256(int256(tmp.tickSpacing))) % 256;
-        }
-
+        tmp.initPoint = uint256(uint256(int256(compressed)) & 0xff);
         tmp.initPoint2 = tmp.initPoint;
-
-        if (tmp.currTick < 0) tmp.right--;
 
         bytes memory tickInfo;
 
