@@ -72,6 +72,10 @@ contract QueryData is OwnableUpgradeable {
         return QueryUniv3TicksSuperCompact.queryUniv3TicksSuperCompact(pool, len);
     }
 
+    function queryUniv3TicksSuperCompactAuto(address pool, uint256 gasReserve) public view returns (bytes memory) {
+        return QueryUniv3TicksSuperCompact.queryUniv3TicksSuperCompactAuto(pool, gasReserve);
+    }
+
     function queryAlgebraTicksSuperCompact(address pool, uint256 len) public view returns (bytes memory) {
         return QueryAlgebraTicksSuperCompact.queryAlgebraTicksSuperCompact(pool, len);
     }
