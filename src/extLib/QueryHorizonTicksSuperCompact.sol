@@ -33,35 +33,49 @@ library QueryHorizonTicksSuperCompact {
         uint256 threshold = len / 2;
 
         // travel from left to right
-        bytes memory tickInfo;
+        // Pre-allocate to avoid O(n^2) bytes.concat; we will trim to actual length before return.
+        bytes memory tickInfo = new bytes(len * 32);
+        uint256 index = 0;
 
         while (currTick < MAX_TICK_PLUS_1 && len > threshold) {
             (, int128 liquidityNet,,) = IHorizonPool(pool).ticks(currTick);
 
             int256 data = int256(uint256(int256(currTick)) << 128)
                 + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
-            tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+            // Write packed bytes32 directly into the pre-allocated buffer.
+            assembly {
+                mstore(add(tickInfo, add(32, mul(index, 32))), data)
+            }
             (, int24 nextTick) = IHorizonPool(pool).initializedTicks(currTick);
             if (currTick == nextTick) {
                 break;
             }
             currTick = nextTick;
             len--;
+            index++;
         }
 
         while (currTick2 > MIN_TICK_MINUS_1 && len > 0) {
             (, int128 liquidityNet,,) = IHorizonPool(pool).ticks(currTick2);
             int256 data = int256(uint256(int256(currTick2)) << 128)
                 + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
-            tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+            // Write packed bytes32 directly into the pre-allocated buffer.
+            assembly {
+                mstore(add(tickInfo, add(32, mul(index, 32))), data)
+            }
             (int24 prevTick,) = IHorizonPool(pool).initializedTicks(currTick2);
             if (prevTick == currTick2) {
                 break;
             }
             currTick2 = prevTick;
             len--;
+            index++;
         }
 
+        // Trim array to actual length (no empty content returned).
+        assembly {
+            mstore(tickInfo, mul(index, 32))
+        }
         return tickInfo;
     }
 }

@@ -52,23 +52,21 @@ library QueryUniv4TicksSuperCompact {
             tmp.currTick = tick;
         }
 
-        tmp.right = tmp.currTick / tmp.tickSpacing / int24(256);
+        // Calculate starting word/bit position aligned with Uniswap V3 TickBitmap.position().
+        // NOTE: Solidity division truncates toward zero, so negative ticks need floor adjustment.
+        int24 compressed = tmp.currTick / tmp.tickSpacing;
+        if (tmp.currTick < 0 && (tmp.currTick % tmp.tickSpacing != 0)) {
+            compressed--;
+        }
+        tmp.right = compressed >> 8;
         tmp.leftMost = -887_272 / tmp.tickSpacing / int24(256) - 2;
         tmp.rightMost = 887_272 / tmp.tickSpacing / int24(256) + 1;
 
-        if (tmp.currTick < 0) {
-            tmp.initPoint = uint256(
-                int256(tmp.currTick) / int256(tmp.tickSpacing)
-                    - (int256(tmp.currTick) / int256(tmp.tickSpacing) / 256 - 1) * 256
-            ) % 256;
-        } else {
-            tmp.initPoint = (uint256(int256(tmp.currTick)) / uint256(int256(tmp.tickSpacing))) % 256;
-        }
+        tmp.initPoint = uint256(uint256(int256(compressed)) & 0xff);
         tmp.initPoint2 = tmp.initPoint;
 
-        if (tmp.currTick < 0) tmp.right--;
-
-        bytes memory tickInfo;
+        // Pre-allocate to avoid O(n^2) bytes.concat; we will trim to actual length before return.
+        bytes memory tickInfo = new bytes(len * 32);
         tmp.left = tmp.right;
 
         uint256 index = 0;
@@ -87,7 +85,10 @@ library QueryUniv4TicksSuperCompact {
 
                         int256 data = int256(uint256(int256(tick)) << 128)
                             + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
-                        tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+                        // Write packed bytes32 directly into the pre-allocated buffer.
+                        assembly {
+                            mstore(add(tickInfo, add(32, mul(index, 32))), data)
+                        }
 
                         index++;
                     }
@@ -114,7 +115,10 @@ library QueryUniv4TicksSuperCompact {
 
                         int256 data = int256(uint256(int256(tick)) << 128)
                             + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
-                        tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+                        // Write packed bytes32 directly into the pre-allocated buffer.
+                        assembly {
+                            mstore(add(tickInfo, add(32, mul(index, 32))), data)
+                        }
 
                         index++;
                     }
@@ -126,6 +130,10 @@ library QueryUniv4TicksSuperCompact {
             isInitPoint = false;
             tmp.initPoint2 = 256;
             tmp.left--;
+        }
+        // Trim array to actual length (no empty content returned).
+        assembly {
+            mstore(tickInfo, mul(index, 32))
         }
         return tickInfo;
     }
@@ -147,23 +155,20 @@ library QueryUniv4TicksSuperCompact {
             tmp.currTick = tick;
         }
 
-        tmp.right = tmp.currTick / tmp.tickSpacing / int24(256);
+        // Calculate starting word/bit position aligned with Uniswap V3 TickBitmap.position().
+        int24 compressed = tmp.currTick / tmp.tickSpacing;
+        if (tmp.currTick < 0 && (tmp.currTick % tmp.tickSpacing != 0)) {
+            compressed--;
+        }
+        tmp.right = compressed >> 8;
         tmp.leftMost = -887_272 / tmp.tickSpacing / int24(256) - 2;
         tmp.rightMost = 887_272 / tmp.tickSpacing / int24(256) + 1;
 
-        if (tmp.currTick < 0) {
-            tmp.initPoint = uint256(
-                int256(tmp.currTick) / int256(tmp.tickSpacing)
-                    - (int256(tmp.currTick) / int256(tmp.tickSpacing) / 256 - 1) * 256
-            ) % 256;
-        } else {
-            tmp.initPoint = (uint256(int256(tmp.currTick)) / uint256(int256(tmp.tickSpacing))) % 256;
-        }
+        tmp.initPoint = uint256(uint256(int256(compressed)) & 0xff);
         tmp.initPoint2 = tmp.initPoint;
 
-        if (tmp.currTick < 0) tmp.right--;
-
-        bytes memory tickInfo;
+        // Pre-allocate to avoid O(n^2) bytes.concat; we will trim to actual length before return.
+        bytes memory tickInfo = new bytes(len * 32);
         tmp.left = tmp.right;
 
         uint256 index = 0;
@@ -182,7 +187,10 @@ library QueryUniv4TicksSuperCompact {
 
                         int256 data = int256(uint256(int256(tick)) << 128)
                             + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
-                        tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+                        // Write packed bytes32 directly into the pre-allocated buffer.
+                        assembly {
+                            mstore(add(tickInfo, add(32, mul(index, 32))), data)
+                        }
 
                         index++;
                     }
@@ -209,7 +217,10 @@ library QueryUniv4TicksSuperCompact {
 
                         int256 data = int256(uint256(int256(tick)) << 128)
                             + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
-                        tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+                        // Write packed bytes32 directly into the pre-allocated buffer.
+                        assembly {
+                            mstore(add(tickInfo, add(32, mul(index, 32))), data)
+                        }
 
                         index++;
                     }
@@ -221,6 +232,10 @@ library QueryUniv4TicksSuperCompact {
             isInitPoint = false;
             tmp.initPoint2 = 256;
             tmp.left--;
+        }
+        // Trim array to actual length (no empty content returned).
+        assembly {
+            mstore(tickInfo, mul(index, 32))
         }
         return tickInfo;
     }
@@ -251,23 +266,20 @@ library QueryUniv4TicksSuperCompact {
             tmp.currTick = tick;
         }
 
-        tmp.right = tmp.currTick / tmp.tickSpacing / int24(256);
+        // Calculate starting word/bit position aligned with Uniswap V3 TickBitmap.position().
+        int24 compressed = tmp.currTick / tmp.tickSpacing;
+        if (tmp.currTick < 0 && (tmp.currTick % tmp.tickSpacing != 0)) {
+            compressed--;
+        }
+        tmp.right = compressed >> 8;
         tmp.leftMost = -887_272 / tmp.tickSpacing / int24(256) - 2;
         tmp.rightMost = 887_272 / tmp.tickSpacing / int24(256) + 1;
 
-        if (tmp.currTick < 0) {
-            tmp.initPoint = uint256(
-                int256(tmp.currTick) / int256(tmp.tickSpacing)
-                    - (int256(tmp.currTick) / int256(tmp.tickSpacing) / 256 - 1) * 256
-            ) % 256;
-        } else {
-            tmp.initPoint = (uint256(int256(tmp.currTick)) / uint256(int256(tmp.tickSpacing))) % 256;
-        }
+        tmp.initPoint = uint256(uint256(int256(compressed)) & 0xff);
         tmp.initPoint2 = tmp.initPoint;
 
-        if (tmp.currTick < 0) tmp.right--;
-
-        bytes memory tickInfo;
+        // Pre-allocate to avoid O(n^2) bytes.concat; we will trim to actual length before return.
+        bytes memory tickInfo = new bytes(len * 32);
         tmp.left = tmp.right;
 
         uint256 index = 0;
@@ -288,7 +300,10 @@ library QueryUniv4TicksSuperCompact {
 
                         int256 data = int256(uint256(int256(tick)) << 128)
                             + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
-                        tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+                        // Write packed bytes32 directly into the pre-allocated buffer.
+                        assembly {
+                            mstore(add(tickInfo, add(32, mul(index, 32))), data)
+                        }
 
                         index++;
                     }
@@ -317,7 +332,10 @@ library QueryUniv4TicksSuperCompact {
 
                         int256 data = int256(uint256(int256(tick)) << 128)
                             + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
-                        tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+                        // Write packed bytes32 directly into the pre-allocated buffer.
+                        assembly {
+                            mstore(add(tickInfo, add(32, mul(index, 32))), data)
+                        }
 
                         index++;
                     }
@@ -329,6 +347,10 @@ library QueryUniv4TicksSuperCompact {
             isInitPoint = false;
             tmp.initPoint2 = 256;
             tmp.left--;
+        }
+        // Trim array to actual length (no empty content returned).
+        assembly {
+            mstore(tickInfo, mul(index, 32))
         }
         return tickInfo;
     }

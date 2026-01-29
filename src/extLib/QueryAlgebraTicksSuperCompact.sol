@@ -43,20 +43,18 @@ library QueryAlgebraTicksSuperCompact {
             }
             tmp.currTick = currTick;
         }
-        tmp.right = tmp.currTick / int24(256);
+        // Calculate starting word/bit position aligned with Uniswap V3 TickBitmap.position()
+        // (tickSpacing=1 in this function).
+        int24 compressed = tmp.currTick;
+        tmp.right = compressed >> 8;
         tmp.leftMost = -887_272 / int24(256) - 2;
         tmp.rightMost = 887_272 / int24(256) + 1;
 
-        if (tmp.currTick < 0) {
-            tmp.initPoint = (256 - (uint256(int256(-tmp.currTick)) % 256)) % 256;
-        } else {
-            tmp.initPoint = uint256(int256(tmp.currTick)) % 256;
-        }
+        tmp.initPoint = uint256(uint256(int256(compressed)) & 0xff);
         tmp.initPoint2 = tmp.initPoint;
 
-        if (tmp.currTick < 0) tmp.right--;
-
-        bytes memory tickInfo;
+        // Pre-allocate to avoid O(n^2) bytes.concat; we will trim to actual length before return.
+        bytes memory tickInfo = new bytes(len * 32);
 
         tmp.left = tmp.right;
 
@@ -79,7 +77,10 @@ library QueryAlgebraTicksSuperCompact {
 
                         int256 data = int256(uint256(int256(tick)) << 128)
                             + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
-                        tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+                        // Write packed bytes32 directly into the pre-allocated buffer.
+                        assembly {
+                            mstore(add(tickInfo, add(32, mul(index, 32))), data)
+                        }
 
                         index++;
                     }
@@ -109,7 +110,10 @@ library QueryAlgebraTicksSuperCompact {
                         }
                         int256 data = int256(uint256(int256(tick)) << 128)
                             + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
-                        tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+                        // Write packed bytes32 directly into the pre-allocated buffer.
+                        assembly {
+                            mstore(add(tickInfo, add(32, mul(index, 32))), data)
+                        }
 
                         index++;
                     }
@@ -122,6 +126,10 @@ library QueryAlgebraTicksSuperCompact {
             tmp.initPoint2 = 256;
 
             tmp.left--;
+        }
+        // Trim array to actual length (no empty content returned).
+        assembly {
+            mstore(tickInfo, mul(index, 32))
         }
         return tickInfo;
     }
@@ -146,14 +154,19 @@ library QueryAlgebraTicksSuperCompact {
         int24 currTick2 = currTick;
         uint256 threshold = iteration / 2;
         // travel from left to right
-        bytes memory tickInfo;
+        // Pre-allocate to avoid O(n^2) bytes.concat; we will trim to actual length before return.
+        bytes memory tickInfo = new bytes(iteration * 32);
+        uint256 index = 0;
 
         while (currTick < MAX_TICK_PLUS_1 && iteration > threshold) {
             (, int128 liquidityNet,,, int24 prevTick, int24 nextTick,,,) = IAlgebraPool(pool).ticks(currTick);
 
             int256 data = int256(uint256(int256(currTick)) << 128)
                 + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
-            tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+            assembly {
+                mstore(add(tickInfo, add(32, mul(index, 32))), data)
+            }
+            index++;
 
             if (currTick == nextTick) {
                 break;
@@ -167,7 +180,10 @@ library QueryAlgebraTicksSuperCompact {
 
             int256 data = int256(uint256(int256(currTick2)) << 128)
                 + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
-            tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+            assembly {
+                mstore(add(tickInfo, add(32, mul(index, 32))), data)
+            }
+            index++;
 
             if (currTick2 == prevTick) {
                 break;
@@ -176,6 +192,10 @@ library QueryAlgebraTicksSuperCompact {
             iteration--;
         }
 
+        // Trim array to actual length (no empty content returned).
+        assembly {
+            mstore(tickInfo, mul(index, 32))
+        }
         return tickInfo;
     }
 
@@ -202,14 +222,19 @@ library QueryAlgebraTicksSuperCompact {
         int24 currTick2 = currTick;
         uint256 threshold = iteration / 2;
         // travel from left to right
-        bytes memory tickInfo;
+        // Pre-allocate to avoid O(n^2) bytes.concat; we will trim to actual length before return.
+        bytes memory tickInfo = new bytes(iteration * 32);
+        uint256 index = 0;
 
         while (currTick < MAX_TICK_PLUS_1 && iteration > threshold) {
             (, int128 liquidityNet, int24 prevTick, int24 nextTick, , ) = IAlgebraPoolIntegral(pool).ticks(currTick);
 
             int256 data = int256(uint256(int256(currTick)) << 128)
                 + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
-            tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+            assembly {
+                mstore(add(tickInfo, add(32, mul(index, 32))), data)
+            }
+            index++;
 
             if (currTick == nextTick) {
                 break;
@@ -223,6 +248,9 @@ library QueryAlgebraTicksSuperCompact {
             (, , int24 prevTick, , , ) = IAlgebraPoolIntegral(pool).ticks(currTick2);
             // if the current tick is the same as the previous tick, means no more previous ticks to process, return the result
             if (currTick2 == prevTick) {
+                assembly {
+                    mstore(tickInfo, mul(index, 32))
+                }
                 return tickInfo;
             }
             currTick2 = prevTick;
@@ -233,7 +261,10 @@ library QueryAlgebraTicksSuperCompact {
 
             int256 data = int256(uint256(int256(currTick2)) << 128)
                 + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
-            tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+            assembly {
+                mstore(add(tickInfo, add(32, mul(index, 32))), data)
+            }
+            index++;
 
             if (currTick2 == prevTick) {
                 break;
@@ -242,6 +273,10 @@ library QueryAlgebraTicksSuperCompact {
             iteration--;
         }
 
+        // Trim array to actual length (no empty content returned).
+        assembly {
+            mstore(tickInfo, mul(index, 32))
+        }
         return tickInfo;
     }
 
@@ -258,23 +293,21 @@ library QueryAlgebraTicksSuperCompact {
             }
             tmp.currTick = currTick;
         }
-        tmp.right = tmp.currTick / tmp.tickSpacing / int24(256);
+        // Calculate starting word/bit position aligned with Uniswap V3 TickBitmap.position().
+        // NOTE: Solidity division truncates toward zero, so negative ticks need floor adjustment.
+        int24 compressed = tmp.currTick / tmp.tickSpacing;
+        if (tmp.currTick < 0 && (tmp.currTick % tmp.tickSpacing != 0)) {
+            compressed--;
+        }
+        tmp.right = compressed >> 8;
         tmp.leftMost = -887_272 / tmp.tickSpacing / int24(256) - 2;
         tmp.rightMost = 887_272 / tmp.tickSpacing / int24(256) + 1;
 
-        if (tmp.currTick < 0) {
-            tmp.initPoint = uint256(
-                int256(tmp.currTick) / int256(tmp.tickSpacing)
-                    - (int256(tmp.currTick) / int256(tmp.tickSpacing) / 256 - 1) * 256
-            ) % 256;
-        } else {
-            tmp.initPoint = (uint256(int256(tmp.currTick)) / uint256(int256(tmp.tickSpacing))) % 256;
-        }
+        tmp.initPoint = uint256(uint256(int256(compressed)) & 0xff);
         tmp.initPoint2 = tmp.initPoint;
 
-        if (tmp.currTick < 0) tmp.right--;
-
-        bytes memory tickInfo;
+        // Pre-allocate to avoid O(n^2) bytes.concat; we will trim to actual length before return.
+        bytes memory tickInfo = new bytes(len * 32);
 
         tmp.left = tmp.right;
 
@@ -297,7 +330,9 @@ library QueryAlgebraTicksSuperCompact {
 
                         int256 data = int256(uint256(int256(tick)) << 128)
                             + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
-                        tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+                        assembly {
+                            mstore(add(tickInfo, add(32, mul(index, 32))), data)
+                        }
 
                         index++;
                     }
@@ -327,7 +362,9 @@ library QueryAlgebraTicksSuperCompact {
                         }
                         int256 data = int256(uint256(int256(tick)) << 128)
                             + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
-                        tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+                        assembly {
+                            mstore(add(tickInfo, add(32, mul(index, 32))), data)
+                        }
 
                         index++;
                     }
@@ -340,6 +377,10 @@ library QueryAlgebraTicksSuperCompact {
             tmp.initPoint2 = 256;
 
             tmp.left--;
+        }
+        // Trim array to actual length (no empty content returned).
+        assembly {
+            mstore(tickInfo, mul(index, 32))
         }
         return tickInfo;
     }
@@ -358,24 +399,21 @@ library QueryAlgebraTicksSuperCompact {
             tmp.currTick = currTick;
         }
         int24 step = int24(int256(len)) * 200;
-        tmp.right = tmp.currTick / tmp.tickSpacing / int24(256);
+        // Calculate starting word/bit position aligned with Uniswap V3 TickBitmap.position().
+        // NOTE: Solidity division truncates toward zero, so negative ticks need floor adjustment.
+        int24 compressed = tmp.currTick / tmp.tickSpacing;
+        if (tmp.currTick < 0 && (tmp.currTick % tmp.tickSpacing != 0)) {
+            compressed--;
+        }
+        tmp.right = compressed >> 8;
         tmp.leftMost = (tmp.currTick - step) / tmp.tickSpacing / int24(256) - 2;
         tmp.rightMost = (tmp.currTick + step) / tmp.tickSpacing / int24(256) + 1;
 
-        if (tmp.currTick < 0) {
-            tmp.initPoint = uint256(
-                int256(tmp.currTick) / int256(tmp.tickSpacing)
-                    - (int256(tmp.currTick) / int256(tmp.tickSpacing) / 256 - 1) * 256
-            ) % 256;
-        } else {
-            tmp.initPoint = (uint256(int256(tmp.currTick)) / uint256(int256(tmp.tickSpacing))) % 256;
-        }
-
+        tmp.initPoint = uint256(uint256(int256(compressed)) & 0xff);
         tmp.initPoint2 = tmp.initPoint;
 
-        if (tmp.currTick < 0) tmp.right--;
-
-        bytes memory tickInfo;
+        // Pre-allocate to avoid O(n^2) bytes.concat; we will trim to actual length before return.
+        bytes memory tickInfo = new bytes(len * 32);
 
         tmp.left = tmp.right;
 
@@ -398,7 +436,9 @@ library QueryAlgebraTicksSuperCompact {
 
                         int256 data = int256(uint256(int256(tick)) << 128)
                             + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
-                        tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+                        assembly {
+                            mstore(add(tickInfo, add(32, mul(index, 32))), data)
+                        }
 
                         index++;
                     }
@@ -428,7 +468,9 @@ library QueryAlgebraTicksSuperCompact {
                         }
                         int256 data = int256(uint256(int256(tick)) << 128)
                             + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
-                        tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+                        assembly {
+                            mstore(add(tickInfo, add(32, mul(index, 32))), data)
+                        }
 
                         index++;
                     }
@@ -441,6 +483,10 @@ library QueryAlgebraTicksSuperCompact {
             tmp.initPoint2 = 256;
 
             tmp.left--;
+        }
+        // Trim array to actual length (no empty content returned).
+        assembly {
+            mstore(tickInfo, mul(index, 32))
         }
         return tickInfo;
     }
