@@ -84,7 +84,8 @@ library QueryFluidDexV2D3D4 {
         tmp.initPoint = uint256(uint256(int256(compressed)) & 0xff);
         tmp.initPoint2 = tmp.initPoint;
 
-        bytes memory tickInfo;
+        // Pre-allocate to avoid O(n^2) bytes.concat; we will trim to actual length before return.
+        bytes memory tickInfo = new bytes(len * 32);
 
         tmp.left = tmp.right;
 
@@ -101,7 +102,10 @@ library QueryFluidDexV2D3D4 {
                         int256 liquidityNet = _getTickLiquidityNet(fluidDexV2, dexType, dexId, int24(tick));
                         int256 data = int256(uint256(int256(tick)) << 128)
                             + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
-                        tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+                        // Write packed bytes32 directly into the pre-allocated buffer.
+                        assembly {
+                            mstore(add(tickInfo, add(32, mul(index, 32))), data)
+                        }
 
                         index++;
                     }
@@ -124,7 +128,10 @@ library QueryFluidDexV2D3D4 {
                         int256 liquidityNet = _getTickLiquidityNet(fluidDexV2, dexType, dexId, int24(tick));
                         int256 data = int256(uint256(int256(tick)) << 128)
                             + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
-                        tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+                        // Write packed bytes32 directly into the pre-allocated buffer.
+                        assembly {
+                            mstore(add(tickInfo, add(32, mul(index, 32))), data)
+                        }
 
                         index++;
                     }
@@ -137,6 +144,10 @@ library QueryFluidDexV2D3D4 {
             tmp.initPoint2 = 256;
 
             tmp.left--;
+        }
+        // Trim array to actual length (no empty content returned).
+        assembly {
+            mstore(tickInfo, mul(index, 32))
         }
         return tickInfo;
     }
@@ -151,10 +162,20 @@ library QueryFluidDexV2D3D4 {
         require(dexType == D3_DEX_TYPE || dexType == D4_DEX_TYPE, "Invalid dex type");
         require(startWordPos <= endWordPos, "Invalid word position");
         
-        bytes memory tickBitmap;
+        int256 wordsSigned = int256(endWordPos) - int256(startWordPos) + 1;
+        // Pre-allocate to avoid O(n^2) bytes.concat; we will trim to actual length before return.
+        bytes memory tickBitmap = new bytes(uint256(wordsSigned) * 32);
+        uint256 index = 0;
         for (int16 wordPos = startWordPos; wordPos <= endWordPos; wordPos++) {
             uint256 res = _getTickBitmap(fluidDexV2, dexType, dexId, wordPos);
-            tickBitmap = bytes.concat(tickBitmap, bytes32(res));
+            assembly {
+                mstore(add(tickBitmap, add(32, mul(index, 32))), res)
+            }
+            index++;
+        }
+        // Trim array to actual length (no empty content returned).
+        assembly {
+            mstore(tickBitmap, mul(index, 32))
         }
         return tickBitmap;
     }
