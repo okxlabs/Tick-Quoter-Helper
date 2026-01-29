@@ -760,21 +760,39 @@ library QueryEkuboTicksSuperCompact {
         int32 tickSpacingVal = int32(poolKey.tickSpacing());
         require(tickSpacingVal > 0, "Invalid tickSpacing");
         bytes32 poolId = poolKey.toPoolId();
-        int32 leftMost = (EKUBO_MIN_TICK / tickSpacingVal) * tickSpacingVal;
-        int32 rightMost = (EKUBO_MAX_TICK / tickSpacingVal) * tickSpacingVal;
-        bytes memory tickInfo;
+
+        int32 compressedLeft = EKUBO_MIN_TICK / tickSpacingVal;
+        if (EKUBO_MIN_TICK < 0 && (EKUBO_MIN_TICK % tickSpacingVal != 0)) {
+            compressedLeft--;
+        }
+        int32 leftMost = compressedLeft * tickSpacingVal;
+
+        int32 compressedRight = EKUBO_MAX_TICK / tickSpacingVal;
+        int32 rightMost = compressedRight * tickSpacingVal;
+
+        // Pre-allocate to avoid O(n^2) bytes.concat; we will trim to actual length before return.
+        uint256 maxTicks = uint256(int256((rightMost - leftMost) / tickSpacingVal)) + 1;
+        bytes memory tickInfo = new bytes(maxTicks * 32);
+
         int32 index = leftMost;
         bool isInitialized;
+        uint256 count = 0;
+
         while (true) {
+            int32 prevIndex = index;
             (index, isInitialized) = ekuboCore.nextInitializedTick(
                 poolId,
                 index,
                 uint32(tickSpacingVal),
                 0
             );
+            // Safety: index must strictly increase; otherwise we'd risk an infinite loop.
+            require(index > prevIndex, "Non-increasing index");
+
             if (index >= rightMost) {
                 break;
             }
+
             if (isInitialized) {
                 (int128 liquidityDelta, ) = poolTicks(
                     core,
@@ -785,8 +803,18 @@ library QueryEkuboTicksSuperCompact {
                 int256 data = int256(uint256(int256(index)) << 128) +
                     (int256(liquidityDelta) &
                         0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
-                tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+
+                // Write packed bytes32 directly into the pre-allocated buffer.
+                assembly {
+                    mstore(add(tickInfo, add(32, mul(count, 32))), data)
+                }
+                count++;
             }
+        }
+
+        // Trim array to actual length (no empty content returned).
+        assembly {
+            mstore(tickInfo, mul(count, 32))
         }
 
         return tickInfo;
