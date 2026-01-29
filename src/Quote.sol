@@ -24,6 +24,7 @@ import "./extLib/QueryPancakeInfinityLBReserveSuperCompact.sol";
 import "./extLib/QueryFluid.sol";
 import "./extLib/QueryFluidLite.sol";
 import "./extLib/QueryFluidDexV2D3D4.sol";
+import "./extLib/QueryEkubo.sol";
 
 contract QueryData is OwnableUpgradeable {
     // Core contract addresses
@@ -36,6 +37,8 @@ contract QueryData is OwnableUpgradeable {
     // FluidDexV2 contract addresses
     address public constant FLUID_LIQUIDITY = 0x0000000000000000000000000000000000000000; // For both FluidDexV2 D3 and D4
     address public constant FLUID_DEX_V2 = 0x0000000000000000000000000000000000000000; // For both FluidDexV2 D3 and D4
+    // Ekubo contract addresses
+    address public constant EKUBO_CORE = 0xe0e0e08A6A4b9Dc7bD67BCB7aadE5cF48157d444;
 
     function initialize() public initializer {
         __Ownable_init();
@@ -178,5 +181,14 @@ contract QueryData is OwnableUpgradeable {
     // Specifically for FluidDexV2D3D4
     function queryFluidDexV2D3D4TickBitmap(uint256 dexType, bytes32 dexId, int16 startWordPos, int16 endWordPos) public view returns (bytes memory) {
         return QueryFluidDexV2D3D4.queryFluidDexV2D3D4TickBitmap(FLUID_DEX_V2, dexType, dexId, startWordPos, endWordPos);
+    }
+
+    // Specifically for Ekubo
+    function queryEkuboTicksSuperCompactByTokens(
+        address token0,
+        address token1,
+        bytes32 config
+    ) public view returns (bytes memory) {
+        return QueryEkuboTicksSuperCompact.queryEkuboTicksSuperCompactByTokens(EKUBO_CORE, token0, token1, config);
     }
 }
