@@ -72,8 +72,8 @@ contract QueryData is OwnableUpgradeable {
         return QueryUniv3TicksSuperCompact.queryUniv3TicksSuperCompact(pool, len);
     }
 
-    function queryUniv3TicksSuperCompactAuto(address pool, uint256 maxTicks) public view returns (bytes memory) {
-        return QueryUniv3TicksSuperCompact.queryUniv3TicksSuperCompactAuto(pool, maxTicks);
+    function queryUniv3TicksSuperCompactAuto(address pool) public view returns (bytes memory) {
+        return QueryUniv3TicksSuperCompact.queryUniv3TicksSuperCompactAuto(pool);
     }
 
     function queryAlgebraTicksSuperCompact(address pool, uint256 len) public view returns (bytes memory) {
@@ -86,6 +86,10 @@ contract QueryData is OwnableUpgradeable {
 
     function queryHorizonTicksSuperCompact(address pool, uint256 len) public view returns (bytes memory) {
         return QueryHorizonTicksSuperCompact.queryHorizonTicksSuperCompact(pool, len);
+    }
+
+    function queryHorizonTicksSuperCompactAuto(address pool) public view returns (bytes memory) {
+        return QueryHorizonTicksSuperCompact.queryHorizonTicksSuperCompactAuto(pool);
     }
 
     function queryAlgebraTicksSuperCompact2(address pool, uint256 len) public view returns (bytes memory) {
@@ -110,6 +114,12 @@ contract QueryData is OwnableUpgradeable {
         );
     }
 
+    function queryUniv4TicksSuperCompactAuto(bytes32 poolId) public view returns (bytes memory) {
+        return QueryUniv4TicksSuperCompact.queryUniv4TicksSuperCompactAuto(
+            poolId, STATE_VIEW, POSITION_MANAGER
+        );
+    }
+
     /*
     * @notice Query the ticks of a Uniswap V4 pool for no position manager
     * @param poolId The ID of the pool
@@ -124,10 +134,20 @@ contract QueryData is OwnableUpgradeable {
         );
     }
 
+    function queryUniv4TicksSuperCompactForNoPositionManagerAuto(bytes32 poolId, IPositionManager.PoolKey calldata poolkey) public view returns (bytes memory) {
+        return QueryUniv4TicksSuperCompact.queryUniv4TicksSuperCompactForNoPositionManagerAuto(
+            poolId, STATE_VIEW, poolkey
+        );
+    }
+
     function queryPancakeInfinityTicksSuperCompact(bytes32 poolId, uint256 len) public view returns (bytes memory) {
         return QueryUniv4TicksSuperCompact.queryPancakeInfinityTicksSuperCompact(
             poolId, len
         );
+    }
+
+    function queryPancakeInfinityTicksSuperCompactAuto(bytes32 poolId) public view returns (bytes memory) {
+        return QueryUniv4TicksSuperCompact.queryPancakeInfinityTicksSuperCompactAuto(poolId);
     }
 
     function queryPancakeInfinityLBReserveSuperCompact(bytes32 poolId) public view returns (uint256 totalReserveX, uint256 totalReserveY) {
@@ -138,6 +158,10 @@ contract QueryData is OwnableUpgradeable {
 
     function queryZoraTicksSuperCompact(address coin, uint256 len) public view returns (bytes memory) {
         return QueryZoraTicksSuperCompact.queryZoraTicksSuperCompact(coin, len, STATE_VIEW);
+    }
+
+    function queryZoraTicksSuperCompactAuto(address coin) public view returns (bytes memory) {
+        return QueryZoraTicksSuperCompact.queryZoraTicksSuperCompactAuto(coin, STATE_VIEW);
     }
 
     // General function for all v4 pools

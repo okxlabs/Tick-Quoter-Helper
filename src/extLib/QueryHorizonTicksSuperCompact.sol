@@ -12,9 +12,12 @@ import "../interface/IUniswapV3Pool.sol";
 import "../interface/IZora.sol";
 import "../interface/IZumiPool.sol";
 
+import {GasReserveCalcLib as GRC} from "./GasReserveCalcLib.sol";
+
 library QueryHorizonTicksSuperCompact {
     int24 internal constant MIN_TICK_MINUS_1 = -887_272 - 1;
     int24 internal constant MAX_TICK_PLUS_1 = 887_272 + 1;
+    uint256 internal constant MAX_TICKS = 4000;
 
     struct SuperVar {
         int24 tickSpacing;
@@ -75,6 +78,74 @@ library QueryHorizonTicksSuperCompact {
         // Trim array to actual length (no empty content returned).
         assembly {
             mstore(tickInfo, mul(index, 32))
+        }
+        return tickInfo;
+    }
+
+    /// @notice Optimized auto version with gas-based termination and alternating query
+    /// @param pool The Horizon pool address
+    /// @return tickInfo Packed tick data (tick << 128 | liquidityNet)
+    function queryHorizonTicksSuperCompactAuto(address pool) public view returns (bytes memory) {
+        (,, int24 currTick,) = IHorizonPool(pool).getPoolState();
+        int24 rightTick = currTick;
+        int24 leftTick = currTick;
+
+        // Pre-allocate fixed size array to avoid O(n²) bytes.concat
+        bytes memory tickInfo = new bytes(MAX_TICKS * 32);
+        uint256 tickCount = 0;
+
+        // Alternating query: query right and left to balance tick range
+        bool canQueryRight = true;
+        bool canQueryLeft = true;
+
+        while (gasleft() > GRC.calcGasReserve(tickCount) && (canQueryRight || canQueryLeft) && tickCount < MAX_TICKS) {
+            // Query one tick on the right side
+            if (canQueryRight && rightTick < MAX_TICK_PLUS_1 && gasleft() > GRC.calcGasReserve(tickCount) && tickCount < MAX_TICKS) {
+                (, int128 liquidityNet,,) = IHorizonPool(pool).ticks(rightTick);
+
+                int256 data = int256(uint256(int256(rightTick)) << 128)
+                    + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
+                // Write packed bytes32 directly into the pre-allocated buffer.
+                assembly {
+                    mstore(add(tickInfo, add(32, mul(tickCount, 32))), data)
+                }
+                tickCount++;
+
+                (, int24 nextTick) = IHorizonPool(pool).initializedTicks(rightTick);
+                if (rightTick == nextTick) {
+                    canQueryRight = false;
+                } else {
+                    rightTick = nextTick;
+                }
+            } else {
+                canQueryRight = false;
+            }
+
+            // Query one tick on the left side
+            if (canQueryLeft && leftTick > MIN_TICK_MINUS_1 && gasleft() > GRC.calcGasReserve(tickCount) && tickCount < MAX_TICKS) {
+                (int24 prevTick,) = IHorizonPool(pool).initializedTicks(leftTick);
+                if (prevTick == leftTick) {
+                    canQueryLeft = false;
+                } else {
+                    leftTick = prevTick;
+
+                    (, int128 liquidityNet,,) = IHorizonPool(pool).ticks(leftTick);
+                    int256 data = int256(uint256(int256(leftTick)) << 128)
+                        + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
+                    // Write packed bytes32 directly into the pre-allocated buffer.
+                    assembly {
+                        mstore(add(tickInfo, add(32, mul(tickCount, 32))), data)
+                    }
+                    tickCount++;
+                }
+            } else {
+                canQueryLeft = false;
+            }
+        }
+
+        // Trim array to actual length (no empty content returned)
+        assembly {
+            mstore(tickInfo, mul(tickCount, 32))
         }
         return tickInfo;
     }
