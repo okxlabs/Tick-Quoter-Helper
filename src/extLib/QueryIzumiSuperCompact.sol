@@ -52,8 +52,11 @@ library QueryIzumiSuperCompact {
         tmp.initPoint = uint256(uint256(int256(compressed)) & 0xff);
         tmp.initPoint2 = tmp.initPoint;
 
-        bytes memory tickInfo;
-        bytes memory limitOrderInfo;
+        // Pre-allocate to avoid O(n^2) bytes.concat; we will trim to actual length before return.
+        bytes memory tickInfo = new bytes(len * 32);
+        bytes memory limitOrderInfo = new bytes(len * 32);
+        uint256 tickCount = 0;
+        uint256 orderCount = 0;
 
         tmp.left = tmp.right;
 
@@ -63,7 +66,7 @@ library QueryIzumiSuperCompact {
             uint256 res = IZumiPool(pool).pointBitmap(int16(tmp.right));
             if (res > 0) {
                 res = res >> tmp.initPoint;
-                for (uint256 i = tmp.initPoint; i < 256; i++) {
+                for (uint256 i = tmp.initPoint; i < 256 && index < len / 2; i++) {
                     uint256 isInit = res & 0x01;
                     if (isInit > 0) {
                         int24 tick = int24(int256((256 * tmp.right + int256(i)) * tmp.tickSpacing));
@@ -76,8 +79,11 @@ library QueryIzumiSuperCompact {
                                         int256(liquidityNet)
                                             & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff
                                     );
-                                tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
-
+                                // Write packed bytes32 directly into the pre-allocated buffer.
+                                assembly {
+                                    mstore(add(tickInfo, add(32, mul(tickCount, 32))), data)
+                                }
+                                tickCount++;
                                 index++;
                             }
                         }
@@ -86,8 +92,10 @@ library QueryIzumiSuperCompact {
                             if (sellingX != 0 || sellingY != 0) {
                                 bytes32 data =
                                     bytes32(abi.encodePacked(int32(tick), uint112(sellingX), uint112(sellingY)));
-                                limitOrderInfo = bytes.concat(limitOrderInfo, data);
-
+                                assembly {
+                                    mstore(add(limitOrderInfo, add(32, mul(orderCount, 32))), data)
+                                }
+                                orderCount++;
                                 index++;
                             }
                         }
@@ -118,8 +126,10 @@ library QueryIzumiSuperCompact {
                                         int256(liquidityNet)
                                             & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff
                                     );
-                                tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
-
+                                assembly {
+                                    mstore(add(tickInfo, add(32, mul(tickCount, 32))), data)
+                                }
+                                tickCount++;
                                 index++;
                             }
                         }
@@ -128,8 +138,10 @@ library QueryIzumiSuperCompact {
                             if (sellingX != 0 || sellingY != 0) {
                                 bytes32 data =
                                     bytes32(abi.encodePacked(int32(tick), uint112(sellingX), uint112(sellingY)));
-                                limitOrderInfo = bytes.concat(limitOrderInfo, data);
-
+                                assembly {
+                                    mstore(add(limitOrderInfo, add(32, mul(orderCount, 32))), data)
+                                }
+                                orderCount++;
                                 index++;
                             }
                         }
@@ -142,6 +154,11 @@ library QueryIzumiSuperCompact {
             tmp.initPoint2 = 256;
 
             tmp.left--;
+        }
+        // Trim arrays to actual lengths (no empty content returned).
+        assembly {
+            mstore(tickInfo, mul(tickCount, 32))
+            mstore(limitOrderInfo, mul(orderCount, 32))
         }
         return (tickInfo, limitOrderInfo);
     }

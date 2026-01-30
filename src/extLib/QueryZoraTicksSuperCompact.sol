@@ -56,7 +56,8 @@ library QueryZoraTicksSuperCompact {
         tmp.initPoint = uint256(uint256(int256(compressed)) & 0xff);
         tmp.initPoint2 = tmp.initPoint;
 
-        bytes memory tickInfo;
+        // Pre-allocate to avoid O(n^2) bytes.concat; we will trim to actual length before return.
+        bytes memory tickInfo = new bytes(len * 32);
         tmp.left = tmp.right;
 
         uint256 index = 0;
@@ -75,7 +76,10 @@ library QueryZoraTicksSuperCompact {
 
                         int256 data = int256(uint256(int256(tick)) << 128)
                             + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
-                        tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+                        // Write packed bytes32 directly into the pre-allocated buffer.
+                        assembly {
+                            mstore(add(tickInfo, add(32, mul(index, 32))), data)
+                        }
 
                         index++;
                     }
@@ -102,7 +106,10 @@ library QueryZoraTicksSuperCompact {
 
                         int256 data = int256(uint256(int256(tick)) << 128)
                             + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
-                        tickInfo = bytes.concat(tickInfo, bytes32(uint256(data)));
+                        // Write packed bytes32 directly into the pre-allocated buffer.
+                        assembly {
+                            mstore(add(tickInfo, add(32, mul(index, 32))), data)
+                        }
 
                         index++;
                     }
@@ -114,6 +121,10 @@ library QueryZoraTicksSuperCompact {
             isInitPoint = false;
             tmp.initPoint2 = 256;
             tmp.left--;
+        }
+        // Trim array to actual length (no empty content returned).
+        assembly {
+            mstore(tickInfo, mul(index, 32))
         }
         return tickInfo;
     }
