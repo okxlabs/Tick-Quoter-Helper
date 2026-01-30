@@ -12,7 +12,11 @@ import "../interface/IUniswapV3Pool.sol";
 import "../interface/IZora.sol";
 import "../interface/IZumiPool.sol";
 
+import {GasReserveCalcLib as GRC} from "./GasReserveCalcLib.sol";
+
 library QueryUniv3TicksSuperCompact {
+    uint256 internal constant MAX_TICKS = 4000;
+
     struct SuperVar {
         int24 tickSpacing;
         int24 currTick;
@@ -131,119 +135,10 @@ library QueryUniv3TicksSuperCompact {
         return tickInfo;
     }
 
-    function queryUniv3TicksSuperCompactAuto(address pool, uint256 gasReserve) public view returns (bytes memory) {
-        SuperVar memory tmp;
-        tmp.tickSpacing = IUniswapV3Pool(pool).tickSpacing();
-        // fix-bug: pancake pool's slot returns different types of params than uniV3, which will cause problem
-        {
-            (, bytes memory slot0) = pool.staticcall(abi.encodeWithSignature("slot0()"));
-            int24 currTick;
-            assembly {
-                currTick := mload(add(slot0, 64))
-            }
-            tmp.currTick = currTick;
-        }
-
-        // Calculate starting word/bit position aligned with Uniswap V3 TickBitmap.position().
-        // NOTE: Solidity division truncates toward zero, so negative ticks need floor adjustment.
-        int24 compressed = tmp.currTick / tmp.tickSpacing;
-        if (tmp.currTick < 0 && (tmp.currTick % tmp.tickSpacing != 0)) {
-            compressed--;
-        }
-        tmp.right = compressed >> 8;
-        tmp.leftMost = -887_272 / tmp.tickSpacing / int24(256) - 2;
-        tmp.rightMost = 887_272 / tmp.tickSpacing / int24(256) + 1;
-
-        tmp.initPoint = uint256(uint256(int256(compressed)) & 0xff);
-        tmp.initPoint2 = tmp.initPoint;
-
-        // Separate storage for right and left ticks to maintain order
-        bytes memory rightTickInfo;
-        bytes memory leftTickInfo;
-
-        tmp.left = tmp.right;
-
-        // Alternating query: query right and left by word to balance tick range
-        bool canQueryRight = true;
-        bool canQueryLeft = true;
-        bool isLeftInitPoint = true;
-
-        while (gasleft() > gasReserve && (canQueryRight || canQueryLeft)) {
-            // Query one word on the right side
-            if (canQueryRight && tmp.right < tmp.rightMost && gasleft() > gasReserve) {
-                uint256 res = IUniswapV3Pool(pool).tickBitmap(int16(tmp.right));
-                if (res > 0) {
-                    res = res >> tmp.initPoint;
-                    for (uint256 i = tmp.initPoint; i < 256 && gasleft() > gasReserve; i++) {
-                        uint256 isInit = res & 0x01;
-                        if (isInit > 0) {
-                            int256 tick = int256((256 * tmp.right + int256(i)) * tmp.tickSpacing);
-                            // fix-bug: to make consistent with solidlyV3 and ramsesV2
-                            int128 liquidityNet;
-                            (, bytes memory d) = pool.staticcall(
-                                abi.encodeWithSelector(IUniswapV3PoolState.ticks.selector, int24(int256(tick)))
-                            );
-                            assembly {
-                                liquidityNet := mload(add(d, 64))
-                            }
-                            int256 data = int256(uint256(int256(tick)) << 128)
-                                + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
-                            rightTickInfo = bytes.concat(rightTickInfo, bytes32(uint256(data)));
-                        }
-                        res = res >> 1;
-                    }
-                }
-                tmp.initPoint = 0;
-                tmp.right++;
-                canQueryRight = tmp.right < tmp.rightMost;
-            } else {
-                canQueryRight = false;
-            }
-
-            // Query one word on the left side
-            if (canQueryLeft && tmp.left > tmp.leftMost && gasleft() > gasReserve) {
-                uint256 res = IUniswapV3Pool(pool).tickBitmap(int16(tmp.left));
-                if (res > 0 && tmp.initPoint2 != 0) {
-                    res = isLeftInitPoint ? res << ((256 - tmp.initPoint2) % 256) : res;
-                    for (uint256 i = tmp.initPoint2 - 1; i >= 0 && gasleft() > gasReserve; i--) {
-                        uint256 isInit = res & 0x8000000000000000000000000000000000000000000000000000000000000000;
-                        if (isInit > 0) {
-                            int256 tick = int256((256 * tmp.left + int256(i)) * tmp.tickSpacing);
-                            // fix-bug: to make consistent with solidlyV3 and ramsesV2
-                            int128 liquidityNet;
-                            (, bytes memory d) = pool.staticcall(
-                                abi.encodeWithSelector(IUniswapV3PoolState.ticks.selector, int24(int256(tick)))
-                            );
-                            assembly {
-                                liquidityNet := mload(add(d, 64))
-                            }
-                            int256 data = int256(uint256(int256(tick)) << 128)
-                                + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
-                            leftTickInfo = bytes.concat(leftTickInfo, bytes32(uint256(data)));
-                        }
-                        res = res << 1;
-                        if (i == 0) break;
-                    }
-                }
-                isLeftInitPoint = false;
-                tmp.initPoint2 = 256;
-                tmp.left--;
-                canQueryLeft = tmp.left > tmp.leftMost;
-            } else {
-                canQueryLeft = false;
-            }
-        }
-        
-        // Combine: right ticks first, then left ticks (same order as original)
-        return bytes.concat(rightTickInfo, leftTickInfo);
-    }
-
     /// @notice Optimized version with pre-allocated array to avoid O(n²) bytes.concat
     /// @param pool The Uniswap V3 pool address
-    /// @param gasReserve Gas to reserve for return operations
-    /// @param maxTicks Maximum number of ticks to query (used for pre-allocation)
     /// @return tickInfo Packed tick data (tick << 128 | liquidityNet)
-    function queryUniv3TicksSuperCompactAuto2(address pool, uint256 gasReserve, uint256 maxTicks) public view returns (bytes memory) {
+    function queryUniv3TicksSuperCompactAuto(address pool) public view returns (bytes memory) {
         SuperVar memory tmp;
         tmp.tickSpacing = IUniswapV3Pool(pool).tickSpacing();
         // fix-bug: pancake pool's slot returns different types of params than uniV3, which will cause problem
@@ -270,7 +165,7 @@ library QueryUniv3TicksSuperCompact {
         tmp.initPoint2 = tmp.initPoint;
 
         // Pre-allocate fixed size array to avoid O(n²) bytes.concat
-        bytes memory tickInfo = new bytes(maxTicks * 32);
+        bytes memory tickInfo = new bytes(MAX_TICKS * 32);
         uint256 tickCount = 0;
 
         tmp.left = tmp.right;
@@ -280,13 +175,13 @@ library QueryUniv3TicksSuperCompact {
         bool canQueryLeft = true;
         bool isLeftInitPoint = true;
 
-        while (gasleft() > gasReserve && (canQueryRight || canQueryLeft) && tickCount < maxTicks) {
+        while (gasleft() > GRC.calcGasReserve(tickCount) && (canQueryRight || canQueryLeft) && tickCount < MAX_TICKS) {
             // Query one word on the right side
-            if (canQueryRight && tmp.right < tmp.rightMost && gasleft() > gasReserve && tickCount < maxTicks) {
+            if (canQueryRight && tmp.right < tmp.rightMost && gasleft() > GRC.calcGasReserve(tickCount) && tickCount < MAX_TICKS) {
                 uint256 res = IUniswapV3Pool(pool).tickBitmap(int16(tmp.right));
                 if (res > 0) {
                     res = res >> tmp.initPoint;
-                    for (uint256 i = tmp.initPoint; i < 256 && gasleft() > gasReserve && tickCount < maxTicks; i++) {
+                    for (uint256 i = tmp.initPoint; i < 256 && gasleft() > GRC.calcGasReserve(tickCount) && tickCount < MAX_TICKS; i++) {
                         uint256 isInit = res & 0x01;
                         if (isInit > 0) {
                             int256 tick = int256((256 * tmp.right + int256(i)) * tmp.tickSpacing);
@@ -317,11 +212,11 @@ library QueryUniv3TicksSuperCompact {
             }
 
             // Query one word on the left side
-            if (canQueryLeft && tmp.left > tmp.leftMost && gasleft() > gasReserve && tickCount < maxTicks) {
+            if (canQueryLeft && tmp.left > tmp.leftMost && gasleft() > GRC.calcGasReserve(tickCount) && tickCount < MAX_TICKS) {
                 uint256 res = IUniswapV3Pool(pool).tickBitmap(int16(tmp.left));
                 if (res > 0 && tmp.initPoint2 != 0) {
                     res = isLeftInitPoint ? res << ((256 - tmp.initPoint2) % 256) : res;
-                    for (uint256 i = tmp.initPoint2 - 1; i >= 0 && gasleft() > gasReserve && tickCount < maxTicks; i--) {
+                    for (uint256 i = tmp.initPoint2 - 1; i >= 0 && gasleft() > GRC.calcGasReserve(tickCount) && tickCount < MAX_TICKS; i--) {
                         uint256 isInit = res & 0x8000000000000000000000000000000000000000000000000000000000000000;
                         if (isInit > 0) {
                             int256 tick = int256((256 * tmp.left + int256(i)) * tmp.tickSpacing);
