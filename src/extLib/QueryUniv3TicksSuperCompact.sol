@@ -158,6 +158,11 @@ library QueryUniv3TicksSuperCompact {
 
             tmp.left--;
         }
+        // Trim array to actual length (no empty content returned).
+        assembly {
+            mstore(tickInfo, mul(index, 32))
+        }
+
         return tickInfo;
     }
 
