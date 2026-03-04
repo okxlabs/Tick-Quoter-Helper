@@ -12,19 +12,18 @@ module.exports = {
     QueryIzumiSuperCompact: "0x6E688ABb2ECB8c299eeBEF4dc5A7389429d2e294",
     QueryHorizonTicksSuperCompact: "0xb9C0032364D5e63CeD45Eea0f7Df189d2758B36f",
     QueryFluidLite: "0x79C0F5f39b7e96430a68f605218A1B6c461e87f5",
-    QueryFluid: "0x8FC9B0305619b84d5272c3349Fa9eF8b4F97EAe1",
+    QueryFluid: "0x8FC9B0305619b84d5272c3349Fa9eF8b4F97EAe1"
   },
   uniswapV4: {
     poolManager: "0x000000000004444c5dc75cB358380D2e3dE08A90",
     stateView: "0x7fFE42C4a5DEeA5b0feC41C94C136Cf115597227",
-    positionManager: "0xbD216513d74C8cf14cf4747E6AaA6420FF64ee9e",
+    positionManager: "0xbD216513d74C8cf14cf4747E6AaA6420FF64ee9e"
   },
   fluidLite: {
     dex: "0xBbcb91440523216e2b87052A99F69c604A7b6e00",
-    deployerContract: "0x4EC7b668BAF70d4A4b0FC7941a7708A07b6d45Be",
+    deployerContract: "0x4EC7b668BAF70d4A4b0FC7941a7708A07b6d45Be"
   },
-  fluid: {
-    liquidity: "0x0000000000000000000000000000000000000000",
-    dexV2: "0x0000000000000000000000000000000000000000",
-  },
+  ekubo: {
+    core: "0xe0e0e08A6A4b9Dc7bD67BCB7aadE5cF48157d444"
+  }
 };

@@ -19,10 +19,6 @@ module.exports = {
     stateView: "0x5ea1bd7974c8a611cbab0bdcafcb1d9cc9b3ba5a",
     positionManager: "0x1ec2ebf4f37e7363fdfe3551602425af0b3ceef9"
   },
-  fluidLite: {
-    dex: "0x0000000000000000000000000000000000000000",
-    deployerContract: "0x0000000000000000000000000000000000000000"
-  },
   fluid: {
     liquidity: "0x52Aa899454998Be5b000Ad077a46Bbe360F4e497",
     dexV2: "0x7822B3944B1a68B231a6e7F55B57967F28BB369e"

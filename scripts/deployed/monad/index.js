@@ -1,6 +1,6 @@
 module.exports = {
   chainId: 143,
-  proxy: "0x667500c9697B475DDa97Ae7bA0b1a938cbC4856d",
+  proxy: "0x822E1755386DF8E38F5aadB0F0D328bBa88b4F50",
   proxyAdmin: "0x188d586Ddcf52439676Ca21A244753fA19F9Ea8e",
   implementation: "0x667500c9697B475DDa97Ae7bA0b1a938cbC4856d",
   libraries: {
@@ -18,13 +18,5 @@ module.exports = {
     poolManager: "0x188d586Ddcf52439676Ca21A244753fA19F9Ea8e",
     stateView: "0x77395F3b2E73aE90843717371294fa97cC419D64",
     positionManager: "0x5b7eC4a94fF9beDb700fb82aB09d5846972F4016",
-  },
-  fluidLite: {
-    dex: "0x0000000000000000000000000000000000000000",
-    deployerContract: "0x0000000000000000000000000000000000000000",
-  },
-  fluid: {
-    liquidity: "0x0000000000000000000000000000000000000000",
-    dexV2: "0x0000000000000000000000000000000000000000",
-  },
+  }
 };
