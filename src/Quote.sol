@@ -27,10 +27,11 @@ import "./extLib/QueryFluidDexV2D3D4.sol";
 import "./extLib/QueryEkubo.sol";
 
 contract QueryData is OwnableUpgradeable {
+    string public constant VERSION = "1.0.0";
     // Core contract addresses
-    address public constant POOL_MANAGER = 0x498581fF718922c3f8e6A244956aF099B2652b2b;
-    address public constant STATE_VIEW = 0xA3c0c9b65baD0b08107Aa264b0f3dB444b867A71;
-    address public constant POSITION_MANAGER = 0x7C5f5A4bBd8fD63184577525326123B519429bDc;
+    address public constant POOL_MANAGER = 0x9a13F98Cb987694C9F086b1F5eB990EeA8264Ec3;
+    address public constant STATE_VIEW = 0xc18a3169788F4F75A170290584ECA6395C75Ecdb;
+    address public constant POSITION_MANAGER = 0x3C3Ea4B57a46241e54610e5f022E5c45859A1017;
     // FluidLite contract addresses
     address public constant FLUID_LITE_DEX = 0x0000000000000000000000000000000000000000;
     address public constant FLUID_LITE_DEPLOYER_CONTRACT = 0x0000000000000000000000000000000000000000;
@@ -38,7 +39,7 @@ contract QueryData is OwnableUpgradeable {
     address public constant FLUID_LIQUIDITY = 0x0000000000000000000000000000000000000000; // For both FluidDexV2 D3 and D4
     address public constant FLUID_DEX_V2 = 0x0000000000000000000000000000000000000000; // For both FluidDexV2 D3 and D4
     // Ekubo contract addresses
-    address public constant EKUBO_CORE = 0xe0e0e08A6A4b9Dc7bD67BCB7aadE5cF48157d444;
+    address public constant EKUBO_CORE = 0x0000000000000000000000000000000000000000;
 
     function initialize() public initializer {
         __Ownable_init();
