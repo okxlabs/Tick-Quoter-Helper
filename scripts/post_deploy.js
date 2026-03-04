@@ -53,20 +53,16 @@ function updateIndexJs(chain, addresses) {
 
   const config = require(indexPath);
 
-  // Track implementation history on upgrade
-  if (addresses.implementation && config.implementation
-      && addresses.implementation.toLowerCase() !== config.implementation.toLowerCase()) {
-    if (!Array.isArray(config.implementationHistory)) {
-      config.implementationHistory = [];
-    }
-    const last = config.implementationHistory[config.implementationHistory.length - 1];
-    if (!last || last.toLowerCase() !== config.implementation.toLowerCase()) {
-      config.implementationHistory.push(config.implementation);
+  // Stage new implementation (don't touch implementation or history yet)
+  if (addresses.implementation) {
+    if (!config.implementation) {
+      // First-time deploy: write directly to implementation (no staging needed)
+      config.implementation = addresses.implementation;
+    } else if (addresses.implementation.toLowerCase() !== config.implementation.toLowerCase()) {
+      // Existing deployment: stage the new impl for later promotion via --promote
+      config.stagedImplementation = addresses.implementation;
     }
   }
-
-  // Update addresses
-  if (addresses.implementation) config.implementation = addresses.implementation;
   if (addresses.proxy) config.proxy = addresses.proxy;
   if (addresses.proxyAdmin) config.proxyAdmin = addresses.proxyAdmin;
   if (Object.keys(addresses.libraries).length > 0) {
