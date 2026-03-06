@@ -13,7 +13,8 @@ module.exports = {
     QueryIzumiSuperCompact: "0x848fe4a789cb5b47471c27431c954193b0ab0fd7",
     QueryHorizonTicksSuperCompact: "0x98d4edc84208f4ebcd3c0345c708939d35388ffe",
     QueryFluidLite: "0xadbce1282abfc7f7ea33e8575ad51f1e98688339",
-    QueryFluid: "0xa61629840e3146646006286f1d3005167cc4e6fc"
+    QueryFluid: "0xa61629840e3146646006286f1d3005167cc4e6fc",
+    QueryFluidDexV2D3D4: "0x37ee4131eca92D4986B94C31326556d4F994Dc17"
   },
   uniswapV4: {
     poolManager: "0x28e2Ea090877bF75740558f6BFB36A5ffeE9e9dF",

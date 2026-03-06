@@ -41,6 +41,8 @@ const LIB_MAPPING = {
   QueryHorizonTicksSuperCompact: 'src/extLib/QueryHorizonTicksSuperCompact.sol:QueryHorizonTicksSuperCompact',
   QueryFluidLite: 'src/extLib/QueryFluidLite.sol:QueryFluidLite',
   QueryFluid: 'src/extLib/QueryFluid.sol:QueryFluid',
+  QueryFluidDexV2D3D4: 'src/extLib/QueryFluidDexV2D3D4.sol:QueryFluidDexV2D3D4',
+  QueryEkubo: 'src/extLib/QueryEkubo.sol:QueryEkubo',
 };
 
 const RPC_ENV_MAP = {

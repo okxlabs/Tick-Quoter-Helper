@@ -38,22 +38,39 @@ function extractAddresses(broadcast) {
     libraries: {},
   };
 
-  if (!broadcast || !broadcast.transactions) return addresses;
+  if (!broadcast) return addresses;
 
-  for (const tx of broadcast.transactions) {
-    if (!tx.contractName || !tx.contractAddress) continue;
-    
-    const name = tx.contractName;
-    const addr = tx.contractAddress;
+  // Extract from transactions
+  if (broadcast.transactions) {
+    for (const tx of broadcast.transactions) {
+      if (!tx.contractName || !tx.contractAddress) continue;
 
-    if (name === 'QueryData') {
-      addresses.implementation = addr;
-    } else if (name === 'TransparentUpgradeableProxy') {
-      addresses.proxy = addr;
-    } else if (name === 'ProxyAdmin') {
-      addresses.proxyAdmin = addr;
-    } else if (LIB_MAPPING[name]) {
-      addresses.libraries[name] = addr;
+      const name = tx.contractName;
+      const addr = tx.contractAddress;
+
+      if (name === 'QueryData') {
+        addresses.implementation = addr;
+      } else if (name === 'TransparentUpgradeableProxy') {
+        addresses.proxy = addr;
+      } else if (name === 'ProxyAdmin') {
+        addresses.proxyAdmin = addr;
+      } else if (LIB_MAPPING[name]) {
+        addresses.libraries[name] = addr;
+      }
+    }
+  }
+
+  // Extract from libraries array (format: "path:Name:address")
+  if (broadcast.libraries) {
+    for (const lib of broadcast.libraries) {
+      const parts = lib.split(':');
+      if (parts.length >= 3) {
+        const name = parts[parts.length - 2];
+        const addr = parts[parts.length - 1];
+        if (LIB_MAPPING[name]) {
+          addresses.libraries[name] = addr;
+        }
+      }
     }
   }
 

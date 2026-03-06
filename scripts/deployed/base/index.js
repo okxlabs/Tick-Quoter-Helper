@@ -12,7 +12,8 @@ module.exports = {
     QueryZoraTicksSuperCompact: "0xc175d951110371a19a34e5eb321cac335d3c9e7e",
     QueryPancakeInfinityLBReserveSuperCompact: "0xd972d8ee0b463bf48b50ea17fa6591d8eadca363",
     QueryFluid: "0x4950358075df0f4f76ad4a62755605a80fb66b0c",
-    QueryFluidLite: "0xf81805e9034f4f6b3d639517cf4760d2e924fc39"
+    QueryFluidLite: "0xf81805e9034f4f6b3d639517cf4760d2e924fc39",
+    QueryFluidDexV2D3D4: "0x37ee4131eca92D4986B94C31326556d4F994Dc17"
   },
   uniswapV4: {
     poolManager: "0x498581fF718922c3f8e6A244956aF099B2652b2b",
