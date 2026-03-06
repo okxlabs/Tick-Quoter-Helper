@@ -18,5 +18,6 @@ module.exports = {
     poolManager: "0x498581fF718922c3f8e6A244956aF099B2652b2b",
     stateView: "0xA3c0c9b65baD0b08107Aa264b0f3dB444b867A71",
     positionManager: "0x7C5f5A4bBd8fD63184577525326123B519429bDc"
-  }
+  },
+  stagedImplementation: "0xee128587c1db1d777163119970b428886b9be2dd"
 };
