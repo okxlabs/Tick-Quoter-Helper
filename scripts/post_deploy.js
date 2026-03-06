@@ -5,11 +5,28 @@ const { CHAINS, CHAIN_ALIASES, LIB_MAPPING } = require('./lib/chains');
 const BROADCAST_DIR = path.join(__dirname, '../broadcast');
 const DEPLOYED_DIR = path.join(__dirname, 'deployed');
 
+// Max age for broadcast artifacts (default 30 minutes)
+const MAX_ARTIFACT_AGE_MS = 30 * 60 * 1000;
+
 function readBroadcast(scriptName, chainId) {
   const broadcastPath = path.join(BROADCAST_DIR, scriptName, String(chainId), 'run-latest.json');
   if (!fs.existsSync(broadcastPath)) {
     return null;
   }
+
+  // Check file modification time to detect stale artifacts
+  const stat = fs.statSync(broadcastPath);
+  const ageMs = Date.now() - stat.mtimeMs;
+  if (ageMs > MAX_ARTIFACT_AGE_MS) {
+    const ageMin = Math.round(ageMs / 60000);
+    const modTime = stat.mtime.toISOString().replace('T', ' ').slice(0, 19);
+    console.log(`Warning: Skipping stale broadcast artifact`);
+    console.log(`  File: ${broadcastPath}`);
+    console.log(`  Last modified: ${modTime} (${ageMin} minutes ago)`);
+    console.log('');
+    return null;
+  }
+
   return JSON.parse(fs.readFileSync(broadcastPath, 'utf8'));
 }
 
@@ -153,6 +170,13 @@ function main() {
   // Read proxy deployment
   const proxyBroadcast = readBroadcast('DeployProxy.s.sol', chainConfig.chainId);
   const proxyAddresses = extractAddresses(proxyBroadcast);
+
+  // Fail if no fresh broadcast artifacts found at all
+  if (!implBroadcast && !proxyBroadcast) {
+    console.error('Error: No fresh broadcast artifacts found.');
+    console.error('Did you forget to run the broadcast command? Re-run with --broadcast and try again.');
+    process.exit(1);
+  }
 
   // Merge addresses
   const addresses = {
