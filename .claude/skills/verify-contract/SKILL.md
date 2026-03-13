@@ -65,7 +65,7 @@ Additionally, check library addresses appear in the implementation bytecode:
 
 Extract the `forge verify-contract` command from the post_deploy.js output (step 2) and execute it.
 
-IMPORTANT: Replace `$ETHERSCAN_API_KEY` with `"$(grep '^ETHERSCAN_API_KEY' .env | cut -d= -f2)"` to load the key from .env without exposing other secrets like PRIVATE_KEY.
+IMPORTANT: Replace `$ETHERSCAN_API_KEY` with `"$(grep '^ETHERSCAN_API_KEY' .env | cut -d= -f2)"` to load only the API key from .env.
 
 - [ ] If verification succeeds → PASS
 - [ ] If verification fails → WARN and output the command for the user to retry manually

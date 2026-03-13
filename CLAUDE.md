@@ -63,8 +63,7 @@ When upgrading or rolling back, the previous implementation address is automatic
 
 ### Environment Variables
 
-Required in `.env` (never committed):
-- `PRIVATE_KEY` — deployer wallet private key
+Configured in `.env` (never committed):
 - `ETHERSCAN_API_KEY` — for source code verification
 - `<CHAIN>_RPC_URL` — per-chain RPC endpoints (e.g., `ETH_RPC_URL`, `BASE_RPC_URL`)
 
