@@ -8,8 +8,6 @@ import {
     DexV2D3D4CommonSlotsLink as DSL
 } from "../interface/IFluidDexV2D3D4.sol";
 
-import "forge-std/console2.sol";
-
 library QueryFluidDexV2D3D4 {
     // ==================== Constants ====================
     // Copy from https://polygonscan.com/address/0x731736537F451c59E1eEafB9Ed14295381203C2f#code#F19#L58
