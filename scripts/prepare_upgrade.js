@@ -3,6 +3,9 @@ const fs = require('fs');
 const { CHAINS, resolveChain } = require('./lib/chains');
 
 const DEPLOYED_DIR = path.join(__dirname, 'deployed');
+const UPGRADE_SOL = path.join(__dirname, '..', 'script', 'UpgradeProxy.s.sol');
+
+const { getAddress } = require('@ethersproject/address');
 
 function parseArgs(args) {
   const result = { chain: null, rollback: false, to: null };
@@ -143,31 +146,46 @@ function main() {
     console.log('');
   }
 
-  // Output commands
-  function printCommand(label, broadcast) {
-    console.log('============================================================');
-    console.log(`${label}:`);
-    console.log('============================================================');
-    console.log('');
-    console.log(`PROXY=${proxy} \\`);
-    console.log(`  PROXY_ADMIN=${proxyAdmin} \\`);
-    console.log(`  NEW_IMPLEMENTATION=${newImpl} \\`);
-    console.log(`  CHAIN_ID=${chainConfig.chainId} \\`);
-    console.log(`  forge script script/UpgradeProxy.s.sol:UpgradeProxy \\`);
-    if (broadcast) {
-      console.log(`  --rpc-url ${chain} --broadcast -vvvv`);
-    } else {
-      console.log(`  --rpc-url ${chain} -vvvv`);
+  // Write addresses into UpgradeProxy.s.sol
+  let sol = fs.readFileSync(UPGRADE_SOL, 'utf8');
+  const replacements = [
+    ['__PROXY__', getAddress(proxy)],
+    ['__PROXY_ADMIN__', getAddress(proxyAdmin)],
+    ['__NEW_IMPLEMENTATION__', getAddress(newImpl)],
+    ['__CHAIN_ID__', String(chainConfig.chainId)],
+  ];
+
+  for (const [placeholder, value] of replacements) {
+    if (!sol.includes(placeholder)) {
+      console.error(`Error: placeholder ${placeholder} not found in UpgradeProxy.s.sol`);
+      console.error('Has the file already been prepared? Run: git checkout -- script/UpgradeProxy.s.sol');
+      process.exit(1);
     }
-    console.log('');
+    sol = sol.replace(placeholder, value);
   }
 
-  printCommand('DRY-RUN COMMAND (simulate without broadcasting)', false);
-  printCommand('BROADCAST COMMAND (execute on-chain)', true);
+  fs.writeFileSync(UPGRADE_SOL, sol);
+  console.log('  Written addresses into script/UpgradeProxy.s.sol');
+  console.log('');
+
+  // Output commands
+  console.log('============================================================');
+  console.log('DRY-RUN COMMAND (simulate without broadcasting):');
+  console.log('============================================================');
+  console.log('');
+  console.log(`forge script script/UpgradeProxy.s.sol:UpgradeProxy --rpc-url ${chain} -vvvv`);
+  console.log('');
+  console.log('============================================================');
+  console.log('BROADCAST COMMAND (execute on-chain):');
+  console.log('============================================================');
+  console.log('');
+  console.log(`forge script script/UpgradeProxy.s.sol:UpgradeProxy --rpc-url ${chain} --broadcast -vvvv`);
+  console.log('');
 
   // Next steps
   console.log('============================================================');
   console.log(`After ${mode.toLowerCase()} completes:`);
+  console.log(`  git checkout -- script/UpgradeProxy.s.sol`);
   console.log(`  node scripts/post_upgrade.js ${chain}`);
   console.log('============================================================');
 }
