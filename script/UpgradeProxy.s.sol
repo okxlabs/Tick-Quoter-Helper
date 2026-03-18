@@ -11,12 +11,13 @@ contract UpgradeProxy is Script {
         uint256 deployerKey = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(deployerKey);
 
-        address proxy = __PROXY__;
-        address proxyAdminAddr = __PROXY_ADMIN__;
-        address newImplementation = __NEW_IMPLEMENTATION__;
+        address proxy = address(0);
+        address proxyAdminAddr = address(0);
+        address newImplementation = address(0);
 
-        // Chain safety check — replaced by prepare_upgrade.js
-        require(block.chainid == __CHAIN_ID__, "Chain ID mismatch!");
+        // Chain safety check
+        uint256 expectedChainId = 0;
+        require(block.chainid == expectedChainId, "Chain ID mismatch!");
 
         console2.log("=========================================");
         console2.log("        Upgrading Proxy          ");

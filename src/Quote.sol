@@ -61,17 +61,6 @@ contract QueryData is OwnableUpgradeable {
         IHooks hooks;
     }
 
-    struct SuperVar {
-        int24 tickSpacing;
-        int24 currTick;
-        int24 right;
-        int24 left;
-        int24 leftMost;
-        int24 rightMost;
-        uint256 initPoint;
-        uint256 initPoint2;
-    }
-
     function queryUniv3TicksSuperCompact(address pool, uint256 len) public view returns (bytes memory) {
         return QueryUniv3TicksSuperCompact.queryUniv3TicksSuperCompact(pool, len);
     }
