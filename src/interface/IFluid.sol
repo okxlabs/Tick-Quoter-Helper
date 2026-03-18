@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.17;
+
 /// @notice implements calculation of address for contracts deployed through CREATE.
 /// Accepts contract deployed from which address & nonce
 library AddressCalcs {
