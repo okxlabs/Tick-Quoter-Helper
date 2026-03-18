@@ -3,7 +3,7 @@ module.exports = {
   version: "1.0.0",
   proxy: "0xCC4739736420c1D6F3F5Dbb53CD52E4AC0d06c9A",
   proxyAdmin: "0xb18792Ba1dbd677EB300660304E9E71E372DA421",
-  implementation: "0x479b3862531135e4D4b9466EBdcfE4974FF16f94",
+  implementation: "0xee9AD4812cf87B500f689217BF1996ECE3284Fd9",
   libraries: {
     QueryAlgebraTicksSuperCompact: "0x8D5f9AD9ee9BE8872189b169cB0FD8f4f4880f7f",
     QueryZoraTicksSuperCompact: "0x4D5340460e31118c33e905Fb1625a79a0a52a89a",
@@ -28,5 +28,7 @@ module.exports = {
   ekubo: {
     core: "0xe0e0e08A6A4b9Dc7bD67BCB7aadE5cF48157d444"
   },
-  stagedImplementation: "0xee9AD4812cf87B500f689217BF1996ECE3284Fd9"
+  implementationHistory: [
+    "0x479b3862531135e4D4b9466EBdcfE4974FF16f94"
+  ]
 };
