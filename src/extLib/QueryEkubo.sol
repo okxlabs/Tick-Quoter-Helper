@@ -500,13 +500,13 @@ error MinMaxBounds();
 error BoundsTickSpacing();
 error FullRangeOnlyPool();
 
-function validateBounds(Bounds memory bounds, uint32 tickSpacing) pure {
-    if (tickSpacing == FULL_RANGE_ONLY_TICK_SPACING) {
+function validateBounds(Bounds memory bounds, uint32 _tickSpacing) pure {
+    if (_tickSpacing == FULL_RANGE_ONLY_TICK_SPACING) {
         if (bounds.lower != MIN_TICK || bounds.upper != MAX_TICK) revert FullRangeOnlyPool();
     } else {
         if (bounds.lower >= bounds.upper) revert BoundsOrder();
         if (bounds.lower < MIN_TICK || bounds.upper > MAX_TICK) revert MinMaxBounds();
-        int32 spacing = int32(tickSpacing);
+        int32 spacing = int32(_tickSpacing);
         if (bounds.lower % spacing != 0 || bounds.upper % spacing != 0) revert BoundsTickSpacing();
     }
 }

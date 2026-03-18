@@ -90,8 +90,8 @@ contract QueryCurveUpgradeableBase is QueryCurveUpgradeableV2 {
             try ICurveNGPool(pool).offpeg_fee_multiplier() returns (uint256 result1) {
                 gas_fee = result1;
                 name = 3;
-                try ICurveNGPool(pool).stored_rates() returns (uint256[] memory result1) {
-                    price_scale = result1;
+                try ICurveNGPool(pool).stored_rates() returns (uint256[] memory storedRates) {
+                    price_scale = storedRates;
                 } catch {
                     price_scale = new uint256[](n);
                 }

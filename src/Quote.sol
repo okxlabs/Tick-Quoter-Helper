@@ -3,16 +3,8 @@ pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import "./interface/IAlgebraPool.sol";
-import "./interface/ICLPoolManager.sol";
-import "./interface/IHooks.sol";
-import "./interface/IHorizonPool.sol";
-import "./interface/IPoolManager.sol";
 import "./interface/IPositionManager.sol";
-import "./interface/IStateView.sol";
-import "./interface/IUniswapV3Pool.sol";
 import "./interface/IZora.sol";
-import "./interface/IZumiPool.sol";
 
 import "./extLib/QueryUniv3TicksSuperCompact.sol";
 import "./extLib/QueryAlgebraTicksSuperCompact.sol";
@@ -45,21 +37,6 @@ contract QueryData is OwnableUpgradeable {
         __Ownable_init();
     }
 
-    type Currency is address;
-    /// @notice Returns the key for identifying a pool
-
-    struct PoolKey {
-        /// @notice The lower currency of the pool, sorted numerically
-        Currency currency0;
-        /// @notice The higher currency of the pool, sorted numerically
-        Currency currency1;
-        /// @notice The pool LP fee, capped at 1_000_000. If the highest bit is 1, the pool has a dynamic fee and must be exactly equal to 0x800000
-        uint24 fee;
-        /// @notice Ticks that involve positions must be a multiple of tick spacing
-        int24 tickSpacing;
-        /// @notice The hooks of the pool
-        IHooks hooks;
-    }
 
     function queryUniv3TicksSuperCompact(address pool, uint256 len) public view returns (bytes memory) {
         return QueryUniv3TicksSuperCompact.queryUniv3TicksSuperCompact(pool, len);
@@ -164,8 +141,8 @@ contract QueryData is OwnableUpgradeable {
     }
 
     // Specifically for FluidDexV2D3D4
-    function queryFluidDexV2D3D4TicksSuperCompact(uint256 dexType, bytes32 dexId, uint24 tickSpacing, uint256 len) public view returns (bytes memory) {
-        return QueryFluidDexV2D3D4.queryFluidDexV2D3D4TicksSuperCompact(FLUID_DEX_V2, dexType, dexId, tickSpacing, len);
+    function queryFluidDexV2D3D4TicksSuperCompact(uint256 dexType, bytes32 dexId, uint24 _tickSpacing, uint256 len) public view returns (bytes memory) {
+        return QueryFluidDexV2D3D4.queryFluidDexV2D3D4TicksSuperCompact(FLUID_DEX_V2, dexType, dexId, _tickSpacing, len);
     }
 
     // Specifically for FluidDexV2D3D4
