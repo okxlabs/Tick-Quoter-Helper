@@ -86,7 +86,7 @@ forge build
       --rpc-url <chain> --broadcast -vvvv
 
   After broadcast completes:
-    /verify-contract <chain>
+    /deploy-verify <chain>
 
 ══════════════════════════════════════════════════════════
 ```

@@ -45,7 +45,7 @@ module.exports = {
 };
 ```
 
-The `version` field tracks the contract VERSION() constant. `QueryData` exposes `string public constant VERSION`. The `promote_config.js` script reads VERSION() on-chain and writes it back to index.js.
+The `version` field tracks the contract VERSION() constant. `QueryData` exposes `string public constant VERSION`. The `post_upgrade.js` script reads VERSION() on-chain and writes it back to index.js.
 
 ### Staged Implementation Workflow
 
@@ -53,7 +53,7 @@ When `post_deploy.js` extracts a new implementation address, it writes to `stage
 
 1. **Deploy impl** → `post_deploy.js` sets `stagedImplementation` (first-time deploy writes directly to `implementation`)
 2. **Upgrade proxy** → human executes upgrade transaction
-3. **Promote config** → `promote_config.js` (or `/verify-state <chain>`) detects the upgrade, moves `stagedImplementation` → `implementation`, archives the old impl in `implementationHistory`, and updates `version`
+3. **Promote config** → `post_upgrade.js` detects the upgrade, moves `stagedImplementation` → `implementation`, archives the old impl in `implementationHistory`, and updates `version`
 
 The script also handles rollback detection: if the on-chain impl matches a `implementationHistory` entry, it promotes accordingly.
 
@@ -73,7 +73,8 @@ Configured in `.env` (never committed):
 |--------|---------|
 | `scripts/prepare_deploy.js <chain>` | Writes chain addresses into `src/Quote.sol` constants |
 | `scripts/post_deploy.js <chain>` | Reads broadcast output → writes `stagedImplementation` to `deployed/<chain>/index.js` |
-| `scripts/promote_config.js <chain>` | Read on-chain state via `cast`; promote staged config; `--check` for read-only |
+| `scripts/prepare_upgrade.js <chain> [--rollback [--to N]]` | Reads index.js → writes addresses into `UpgradeProxy.s.sol`, outputs forge command |
+| `scripts/post_upgrade.js <chain>` | Read on-chain state via `cast`; promote staged config; `--check` for read-only |
 | `scripts/lib/chains.js` | Shared chain config (CHAINS, aliases, library mapping) |
 
 ## Forge Scripts
@@ -82,82 +83,75 @@ Configured in `.env` (never committed):
 |--------|---------|
 | `script/DeployImpl.s.sol:Deploy` | Deploy QueryData implementation |
 | `script/DeployProxy.s.sol:DeployProxy` | Deploy TransparentProxy + ProxyAdmin |
-| `script/UpgradeProxy.s.sol:UpgradeProxy` | Upgrade proxy to new implementation (env: PROXY, PROXY_ADMIN, NEW_IMPLEMENTATION) |
+| `script/UpgradeProxy.s.sol:UpgradeProxy` | Upgrade proxy to new implementation (addresses written by `prepare_upgrade.js`) |
 
 ## Safety Rules
 
 1. **Always dry-run before broadcast** — `forge script ... -vvvv` (no `--broadcast`) first
-2. **Validate after every deployment** — `node scripts/promote_config.js <chain> --check`
+2. **Validate after every deployment** — `node scripts/post_upgrade.js <chain> --check`
 3. **Never commit `.env`** — it contains private keys
 4. **Restore Quote.sol after deploy** — `git checkout -- src/Quote.sol` (prepare_deploy modifies it temporarily)
-5. **Check chain ID** — UpgradeProxy.s.sol supports optional `CHAIN_ID` env var for safety
+5. **Restore UpgradeProxy.s.sol after upgrade** — `git checkout -- script/UpgradeProxy.s.sol` (prepare_upgrade modifies it temporarily)
 6. **Update VERSION on upgrade** — bump the `VERSION` constant in `src/Quote.sol` before deploying a new implementation
-7. **Deploy and upgrade are separate steps** — use `deploy-impl` to deploy implementation + verify source, then `upgrade` to point proxy to new impl. Never bundle them into one operation
-8. **Validate after upgrade/rollback** — use `promote_config.js` (or `/verify-state <chain>`) to confirm on-chain state and promote config
+7. **Deploy and upgrade are separate steps** — deploy implementation first, then upgrade proxy. Never bundle them into one operation
+8. **Validate after upgrade/rollback** — use `post_upgrade.js` to confirm on-chain state and promote config
 
 ## Deployment Skills
 
-Skills codify the team's deployment workflow into reusable CC-assisted checkpoints. Each skill covers one step — the human drives the flow between steps, CC assists quality within each step.
+4 skills matching the 4 scripts. Each skill wraps its script + adds extra validation checks. Human drives the flow between steps.
 
-**All skills are read-only except dry-run. No skill will broadcast transactions.**
+**All skills are read-only. No skill will broadcast transactions.**
 
 ### Workflow
 
 ```
-/deploy-prepare eth              ← VERSION check + prepare_deploy + forge build
-        ↓ (human reviews, broadcasts)
-  [human runs: forge script ... --broadcast -vvvv]
-        ↓ (broadcast completes)
-/verify-contract eth             ← post_deploy + on-chain verify + source verify
+/deploy-prepare eth              ← VERSION check + prepare_deploy.js + forge build
+        ↓ (human broadcasts deploy)
+  [human runs: forge script DeployImpl ... --broadcast -vvvv]
+        ↓
+/deploy-verify eth               ← post_deploy.js + bytecode verify + source verify
         ↓ (if upgrading proxy)
-/upgrade-readiness eth           ← Check on-chain state, output forge script command
-        ↓ (human reviews, runs upgrade)
-  [human runs: PROXY=... forge script UpgradeProxy ... --broadcast -vvvv]
-        ↓ (upgrade completes)
-/verify-state eth                ← Verify on-chain state + promote config
-        ↓ (if issues detected)
-/rollback-analysis eth           ← Diagnose anomaly, output forge script command
-        ↓ (human reviews, runs rollback)
-  [human runs: PROXY=... forge script UpgradeProxy ... --broadcast -vvvv]
-        ↓ (rollback completes)
-/verify-state eth                ← Verify on-chain state + promote config
+/upgrade-prepare eth             ← validate staged impl + prepare_upgrade.js
+        ↓ (human broadcasts upgrade)
+  [human runs: forge script UpgradeProxy ... --broadcast -vvvv]
+        ↓
+/upgrade-verify eth              ← proxy state check + post_upgrade.js promote
 ```
 
-### Example: Deploy Quote Impl to ETH and Upgrade
+Rollback uses the same flow: `/upgrade-prepare eth --rollback` → broadcast → `/upgrade-verify eth`
+
+### Example
 
 ```
 user:  /deploy-prepare eth
-CC:    ✅ VERSION 1.2.0 bumped  ✅ addresses prepared  ✅ compiled
+CC:    ✅ VERSION bumped  ✅ addresses prepared  ✅ compiled
        → forge script script/DeployImpl.s.sol:Deploy --rpc-url eth --broadcast -vvvv
 
-user:  [runs broadcast command]
+user:  [broadcasts deploy]
 
-user:  /verify-contract eth
-CC:    ✅ index.js updated (stagedImplementation set)  ✅ impl on-chain  ✅ source verified
-       → next: /upgrade-readiness eth
+user:  /deploy-verify eth
+CC:    ✅ index.js updated  ✅ impl on-chain  ✅ source verified
+       → /upgrade-prepare eth
 
-user:  /upgrade-readiness eth
-CC:    current impl 0xOLD → target 0xNEW, VERSION 1.1.0 → 1.2.0
-       → PROXY=... PROXY_ADMIN=... NEW_IMPLEMENTATION=... forge script ...
+user:  /upgrade-prepare eth
+CC:    ✅ staged impl has bytecode  ✅ UpgradeProxy.s.sol addresses written
+       → forge script script/UpgradeProxy.s.sol:UpgradeProxy --rpc-url eth --broadcast -vvvv
 
-user:  [runs upgrade command]
+user:  [broadcasts upgrade]
 
-user:  /verify-state eth
-CC:    ✅ on-chain matches stagedImplementation  ✅ config promoted
+user:  /upgrade-verify eth
+CC:    Scenario: UPGRADE  ✅ proxy verified  ✅ config promoted
        implementation: 0xNEW, version: 1.2.0, history updated
 ```
 
-Human drives every decision. CC assists quality at each checkpoint. No skill will broadcast transactions.
-
 ### Skill Reference
 
-| Skill | Purpose | Allowed Actions |
-|-------|---------|-----------------|
-| `/deploy-prepare <chain>` | VERSION check + prepare addresses + compile | `prepare_deploy.js`, `forge build`, read files |
-| `/verify-contract <chain>` | Post-broadcast: extract addresses + verify | `post_deploy.js`, `cast`, `forge verify-contract` |
-| `/upgrade-readiness <chain>` | Pre-upgrade state confirmation | `cast call/storage`, read config |
-| `/verify-state <chain>` | Post-upgrade/rollback: verify + promote config | `promote_config.js`, `cast`, read config |
-| `/rollback-analysis <chain>` | Rollback decision support | `cast call/storage`, read history |
+| Skill | Script | Extra Checks |
+|-------|--------|--------------|
+| `/deploy-prepare <chain>` | `prepare_deploy.js` + `forge build` | VERSION bump check |
+| `/deploy-verify <chain>` | `post_deploy.js` | bytecode on-chain, library bytecode, source verify, Quote.sol cleanup |
+| `/upgrade-prepare <chain> [--rollback]` | `prepare_upgrade.js` | target impl bytecode on-chain, UpgradeProxy.s.sol diff |
+| `/upgrade-verify <chain> [--check]` | `post_upgrade.js` | proxy slot, VERSION/owner/POOL_MANAGER state checks |
 
 ## Build & Test
 

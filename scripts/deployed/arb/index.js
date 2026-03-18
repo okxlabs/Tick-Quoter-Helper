@@ -3,7 +3,7 @@ module.exports = {
   version: "1.0.0",
   proxy: "0x2303669f3d9816b4cffc42ec13bf7484d284fd16",
   proxyAdmin: "0x667500c9697b475dda97ae7ba0b1a938cbc4856d",
-  implementation: "0xcebb810f65141687fb2f571ff82ed728584f808d",
+  implementation: "0x316374bc97094a36170803d1aff51e1fbeed0a29",
   libraries: {
     QueryAlgebraTicksSuperCompact: "0xd969da8f6c1f88dbc93f4ed8260b56a2017950f5",
     QueryZoraTicksSuperCompact: "0x537a41fe75bdd9b0b8518ee0215d207327b1cc08",
@@ -20,5 +20,7 @@ module.exports = {
     stateView: "0x76Fd297e2D437cd7f76d50F01AfE6160f86e9990",
     positionManager: "0xd88F38F930b7952f2DB2432Cb002E7abbF3dD869"
   },
-  stagedImplementation: "0x316374bc97094a36170803d1aff51e1fbeed0a29"
+  implementationHistory: [
+    "0xcebb810f65141687fb2f571ff82ed728584f808d"
+  ]
 };

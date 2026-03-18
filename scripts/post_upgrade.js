@@ -5,7 +5,7 @@
  * upgrade / rollback / no-change, and updates index.js accordingly.
  *
  * Usage:
- *   node scripts/promote_config.js <chain> [--check]
+ *   node scripts/post_upgrade.js <chain> [--check]
  *
  * Flags:
  *   --check   Read-only mode — report what would happen without writing
@@ -48,7 +48,7 @@ function main() {
     if (args[i] === '--check') {
       checkOnly = true;
     } else if (args[i] === '--help' || args[i] === '-h') {
-      console.log('Usage: node scripts/promote_config.js <chain> [--check]');
+      console.log('Usage: node scripts/post_upgrade.js <chain> [--check]');
       process.exit(0);
     } else if (!chainArg) {
       chainArg = args[i];
@@ -57,7 +57,7 @@ function main() {
 
   if (!chainArg) {
     console.error('Error: chain argument required');
-    console.error('Usage: node scripts/promote_config.js <chain> [--check]');
+    console.error('Usage: node scripts/post_upgrade.js <chain> [--check]');
     process.exit(1);
   }
 
@@ -117,7 +117,9 @@ function main() {
     process.exit(1);
   }
 
-  const onChainVersion = cast(['call', proxy, 'VERSION()(string)'], rpc);
+  // cast call returns quoted strings like "1.0.0" — strip surrounding quotes
+  const rawVersion = cast(['call', proxy, 'VERSION()(string)'], rpc);
+  const onChainVersion = rawVersion ? rawVersion.replace(/^"|"$/g, '') : null;
 
   // Validate version format before trusting it
   if (onChainVersion && (onChainVersion.length > 32 || !/^[\w.+-]+$/.test(onChainVersion))) {
