@@ -4,16 +4,16 @@ module.exports = {
   proxyAdmin: "0xeac3f383d26967952be615566360b64177f5d450",
   implementation: "0xee128587c1db1d777163119970b428886b9be2dd",
   libraries: {
-    QueryUniv3TicksSuperCompact: "0x3042010469dfd519c19c21f09ae19ea3b60e7dd3",
-    QueryUniv4TicksSuperCompact: "0x23ea15135047e7a369f6f7dde640fe60c928c4af",
-    QueryAlgebraTicksSuperCompact: "0xe2ae3323bf9ccca1122bc999613ddadf0b7f886e",
-    QueryHorizonTicksSuperCompact: "0x6b957ed1e3bb0e26961b66d7727fb11ed2e77460",
-    QueryIzumiSuperCompact: "0xdfbfd2113bff6cd248ec1760df109beb244b2e5a",
-    QueryZoraTicksSuperCompact: "0xc175d951110371a19a34e5eb321cac335d3c9e7e",
-    QueryPancakeInfinityLBReserveSuperCompact: "0xd972d8ee0b463bf48b50ea17fa6591d8eadca363",
-    QueryFluid: "0x4950358075df0f4f76ad4a62755605a80fb66b0c",
-    QueryFluidLite: "0xf81805e9034f4f6b3d639517cf4760d2e924fc39",
-    QueryFluidDexV2D3D4: "0x37ee4131eca92D4986B94C31326556d4F994Dc17"
+    QueryAlgebraTicksSuperCompact: "0x4DC90079EAd5dECeC19c4B05a1b8382E2977C199",
+    QueryZoraTicksSuperCompact: "0x1c03124F368035F4D8aFbC08E03d9787568C62f2",
+    QueryUniv4TicksSuperCompact: "0xa74F26c6307386b0084E857cCF3F5E31cE979941",
+    QueryUniv3TicksSuperCompact: "0x1bC7C16a1020e9D3373e3E1b12388efcd01B7703",
+    QueryPancakeInfinityLBReserveSuperCompact: "0x86894feB64Ede8B5AE9A16DbD37a866de79f3149",
+    QueryIzumiSuperCompact: "0x76Cd7f6adb3Df61A04AD34CFCC52e37ea87246dC",
+    QueryHorizonTicksSuperCompact: "0x12502F18334237928b3160397c3E5a724126c7d8",
+    QueryFluidLite: "0xf0792aaEbc112D5BF1282b4d8c0F667E3c386401",
+    QueryFluidDexV2D3D4: "0xB1c4a91e5DBBeE139Ab8CE46518C8132Ac055a7B",
+    QueryFluid: "0x6c97aBA0a2b2B0DE64F83b29a06bDC5f521400C3"
   },
   uniswapV4: {
     poolManager: "0x498581fF718922c3f8e6A244956aF099B2652b2b",
@@ -22,5 +22,6 @@ module.exports = {
   },
   implementationHistory: [
     "0x92487d624d1f4d5dac6575dccb529728ec4c9f0d"
-  ]
+  ],
+  stagedImplementation: "0x1b1ea64513d8e5ba58aa3c1cf4e179db3fde4eb0"
 };
