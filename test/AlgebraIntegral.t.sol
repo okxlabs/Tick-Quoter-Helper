@@ -17,8 +17,8 @@ contract AlgebraIntegralTest is Test {
     }
 
     function test_queryAlgebraTicksSuperCompact2_v2() public {
-        QueryData quoter = new QueryData();
-        quoter.initialize();
+        QueryData localQuoter = new QueryData();
+        localQuoter.initialize();
         bytes memory ticks = quoter.queryAlgebraTicksSuperCompact2_v2(BLACK_HOLE_V3_POOL, 20);
         console2.logBytes(ticks);
 

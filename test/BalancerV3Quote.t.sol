@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.22;
+pragma solidity 0.8.20;
 pragma abicoder v2;
 
 import "forge-std/console2.sol";
 import "forge-std/test.sol";
 import {BalancerV3Quoter, IVault, IERC20, IQuantAMMWeightedPool} from "../src/Balancer/BalancerV3Quoter.sol";
-import "lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract BalancerV3QuoteTest is Test {
     BalancerV3Quoter quoter;
