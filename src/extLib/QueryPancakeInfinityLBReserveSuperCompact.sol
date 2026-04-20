@@ -14,6 +14,12 @@ library QueryPancakeInfinityLBReserveSuperCompact {
         IBinPoolManager.PoolId lbPoolId = IBinPoolManager.PoolId.wrap(poolId);
         uint24 minBinId = IBinPoolManager(PANCAKE_INFINITY_LBPOOLMANAGER).getNextNonEmptyBin(lbPoolId, false, 1);
         uint24 maxBinId = IBinPoolManager(PANCAKE_INFINITY_LBPOOLMANAGER).getNextNonEmptyBin(lbPoolId, true, type(uint24).max);
+
+        // Sentinel values: no non-empty bins found, pool has no liquidity
+        if (minBinId == 0 || maxBinId == type(uint24).max) {
+            return (0, 0);
+        }
+
         (uint24 activeId, , ) = IBinPoolManager(PANCAKE_INFINITY_LBPOOLMANAGER).getSlot0(lbPoolId);
 
         for (uint24 i = minBinId; i <= maxBinId; i++) {

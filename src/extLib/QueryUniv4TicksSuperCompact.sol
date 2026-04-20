@@ -244,8 +244,7 @@ library QueryUniv4TicksSuperCompact {
         bytes32 poolId,
         uint256 len
     ) public view returns (bytes memory) {
-        SuperVar memory tmp;
-
+        int24 tickSpacing;
         {
             (, bytes memory result) = PANCAKE_INFINITY_POSITION_MANAGER.staticcall(
                 abi.encodeWithSignature("poolKeys(bytes25)", bytes25(poolId))
@@ -256,8 +255,27 @@ library QueryUniv4TicksSuperCompact {
                 // Parameters is at offset 160 (32 * 5)
                 parameters := mload(add(result, 192))
             }
-            tmp.tickSpacing = getTickSpacing(parameters);
+            tickSpacing = getTickSpacing(parameters);
         }
+        return _queryPancakeInfinityTicksInternal(poolId, tickSpacing, len);
+    }
+
+    function queryPancakeInfinityTicksSuperCompactByPoolKey(
+        ICLPoolManager.PoolKey calldata poolKey,
+        uint256 len
+    ) public view returns (bytes memory) {
+        int24 tickSpacing = getTickSpacing(poolKey.parameters);
+        bytes32 poolId = keccak256(abi.encode(poolKey));
+        return _queryPancakeInfinityTicksInternal(poolId, tickSpacing, len);
+    }
+
+    function _queryPancakeInfinityTicksInternal(
+        bytes32 poolId,
+        int24 tickSpacing,
+        uint256 len
+    ) private view returns (bytes memory) {
+        SuperVar memory tmp;
+        tmp.tickSpacing = tickSpacing;
 
         ICLPoolManager.PoolId clPoolId = ICLPoolManager.PoolId.wrap(poolId);
 

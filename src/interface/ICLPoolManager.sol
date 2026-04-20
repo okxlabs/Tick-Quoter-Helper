@@ -11,6 +11,16 @@ library Tick {
 interface ICLPoolManager {
     type PoolId is bytes32;
 
+    /// @notice PoolKey for Pancake Infinity
+    struct PoolKey {
+        address currency0;
+        address currency1;
+        address hooks;
+        address poolManager;
+        uint24 fee;
+        bytes32 parameters;
+    }
+
     /// @notice Get the tick info about a specific tick in the pool
     function getPoolTickInfo(PoolId id, int24 tick) external view returns (Tick.Info memory);
 

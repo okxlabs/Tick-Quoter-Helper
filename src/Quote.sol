@@ -29,9 +29,9 @@ import "./extLib/QueryEkubo.sol";
 contract QueryData is OwnableUpgradeable {
     string public constant VERSION = "1.0.0";
     // Core contract addresses
-    address public constant POOL_MANAGER = 0x9a13F98Cb987694C9F086b1F5eB990EeA8264Ec3;
-    address public constant STATE_VIEW = 0xc18a3169788F4F75A170290584ECA6395C75Ecdb;
-    address public constant POSITION_MANAGER = 0x3C3Ea4B57a46241e54610e5f022E5c45859A1017;
+    address public constant POOL_MANAGER = 0x28e2Ea090877bF75740558f6BFB36A5ffeE9e9dF;
+    address public constant STATE_VIEW = 0xd13Dd3D6E93f276FAfc9Db9E6BB47C1180aeE0c4;
+    address public constant POSITION_MANAGER = 0x7A4a5c919aE2541AeD11041A1AEeE68f1287f95b;
     // FluidLite contract addresses
     address public constant FLUID_LITE_DEX = 0x0000000000000000000000000000000000000000;
     address public constant FLUID_LITE_DEPLOYER_CONTRACT = 0x0000000000000000000000000000000000000000;
@@ -127,6 +127,12 @@ contract QueryData is OwnableUpgradeable {
     function queryPancakeInfinityTicksSuperCompact(bytes32 poolId, uint256 len) public view returns (bytes memory) {
         return QueryUniv4TicksSuperCompact.queryPancakeInfinityTicksSuperCompact(
             poolId, len
+        );
+    }
+
+    function queryPancakeInfinityTicksSuperCompactByPoolKey(ICLPoolManager.PoolKey calldata poolKey, uint256 len) public view returns (bytes memory) {
+        return QueryUniv4TicksSuperCompact.queryPancakeInfinityTicksSuperCompactByPoolKey(
+            poolKey, len
         );
     }
 
