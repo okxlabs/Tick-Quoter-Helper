@@ -12,18 +12,33 @@ library QueryPancakeInfinityLBReserveSuperCompact {
         returns (uint256 totalReserveX, uint256 totalReserveY)
     {
         IBinPoolManager.PoolId lbPoolId = IBinPoolManager.PoolId.wrap(poolId);
-        uint24 minBinId = IBinPoolManager(PANCAKE_INFINITY_LBPOOLMANAGER).getNextNonEmptyBin(lbPoolId, false, 1);
-        uint24 maxBinId = IBinPoolManager(PANCAKE_INFINITY_LBPOOLMANAGER).getNextNonEmptyBin(lbPoolId, true, type(uint24).max);
+
+        (bool s1, bytes memory d1) = PANCAKE_INFINITY_LBPOOLMANAGER.staticcall(abi.encodeWithSelector(IBinPoolManager.getNextNonEmptyBin.selector, lbPoolId, false, uint24(1)));
+        require(s1, "err_quoter_pancake_lb_getNextNonEmptyBin_min_failed");
+        uint24 minBinId = abi.decode(d1, (uint24));
+
+        (bool s2, bytes memory d2) = PANCAKE_INFINITY_LBPOOLMANAGER.staticcall(abi.encodeWithSelector(IBinPoolManager.getNextNonEmptyBin.selector, lbPoolId, true, type(uint24).max));
+        require(s2, "err_quoter_pancake_lb_getNextNonEmptyBin_max_failed");
+        uint24 maxBinId = abi.decode(d2, (uint24));
 
         // Sentinel values: no non-empty bins found, pool has no liquidity
         if (minBinId == 0 || maxBinId == type(uint24).max) {
             return (0, 0);
         }
 
-        (uint24 activeId, , ) = IBinPoolManager(PANCAKE_INFINITY_LBPOOLMANAGER).getSlot0(lbPoolId);
+        (bool s3, bytes memory d3) = PANCAKE_INFINITY_LBPOOLMANAGER.staticcall(abi.encodeWithSelector(IBinPoolManager.getSlot0.selector, lbPoolId));
+        require(s3, "err_quoter_pancake_lb_getSlot0_failed");
+        (uint24 activeId, , ) = abi.decode(d3, (uint24, uint24, uint24));
 
         for (uint24 i = minBinId; i <= maxBinId; i++) {
-            (uint128 reserveX, uint128 reserveY,,) = IBinPoolManager(PANCAKE_INFINITY_LBPOOLMANAGER).getBin(lbPoolId, i);
+            uint128 reserveX;
+            uint128 reserveY;
+            try IBinPoolManager(PANCAKE_INFINITY_LBPOOLMANAGER).getBin(lbPoolId, i) returns (uint128 _reserveX, uint128 _reserveY, uint256, uint256) {
+                reserveX = _reserveX;
+                reserveY = _reserveY;
+            } catch {
+                revert("err_quoter_pancake_lb_getBin_failed");
+            }
             if (i < activeId) {
                 totalReserveY += reserveY;
             } else if (i > activeId) {

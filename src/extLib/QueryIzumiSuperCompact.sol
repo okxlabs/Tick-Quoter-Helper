@@ -29,9 +29,15 @@ library QueryIzumiSuperCompact {
 
     function queryIzumiSuperCompact(address pool, uint256 len) public view returns (bytes memory, bytes memory) {
         SuperVar memory tmp;
-        tmp.tickSpacing = IZumiPool(pool).pointDelta();
         {
-            (, bytes memory slot0) = pool.staticcall(abi.encodeWithSignature("state()"));
+            (bool pd, bytes memory pdd) = pool.staticcall(abi.encodeWithSelector(IZumiPool.pointDelta.selector));
+            require(pd, "err_quoter_izumi_pointDelta_failed");
+            tmp.tickSpacing = abi.decode(pdd, (int24));
+            require(tmp.tickSpacing != 0, "err_quoter_izumi_tickSpacing_zero");
+        }
+        {
+            (bool success, bytes memory slot0) = pool.staticcall(abi.encodeWithSignature("state()"));
+            require(success, "err_quoter_izumi_state_failed");
             int24 currTick;
             assembly {
                 currTick := mload(add(slot0, 64))
@@ -63,16 +69,31 @@ library QueryIzumiSuperCompact {
         uint256 index = 0;
 
         while (index < len / 2 && tmp.right < tmp.rightMost) {
-            uint256 res = IZumiPool(pool).pointBitmap(int16(tmp.right));
+            uint256 res;
+            try IZumiPool(pool).pointBitmap(int16(tmp.right)) returns (uint256 _res) {
+                res = _res;
+            } catch {
+                revert("err_quoter_izumi_pointBitmap_failed");
+            }
             if (res > 0) {
                 res = res >> tmp.initPoint;
                 for (uint256 i = tmp.initPoint; i < 256 && index < len / 2; i++) {
                     uint256 isInit = res & 0x01;
                     if (isInit > 0) {
                         int24 tick = int24(int256((256 * tmp.right + int256(i)) * tmp.tickSpacing));
-                        int24 orderOrEndpoint = IZumiPool(pool).orderOrEndpoint(tick / tmp.tickSpacing);
+                        int24 orderOrEndpoint;
+                        try IZumiPool(pool).orderOrEndpoint(tick / tmp.tickSpacing) returns (int24 _oe) {
+                            orderOrEndpoint = _oe;
+                        } catch {
+                            revert("err_quoter_izumi_orderOrEndpoint_failed");
+                        }
                         if (orderOrEndpoint & 0x01 == 0x01) {
-                            (, int128 liquidityNet,,,) = IZumiPool(pool).points(tick);
+                            int128 liquidityNet;
+                            try IZumiPool(pool).points(tick) returns (uint256, int128 _liquidityNet, uint256, uint256, bool) {
+                                liquidityNet = _liquidityNet;
+                            } catch {
+                                revert("err_quoter_izumi_points_failed");
+                            }
                             if (liquidityNet != 0) {
                                 int256 data = int256(uint256(int256(tick)) << 128)
                                     + (
@@ -88,7 +109,14 @@ library QueryIzumiSuperCompact {
                             }
                         }
                         if (orderOrEndpoint & 0x02 == 0x02) {
-                            (uint128 sellingX,,,,, uint128 sellingY,,,,) = IZumiPool(pool).limitOrderData(tick);
+                            uint128 sellingX;
+                            uint128 sellingY;
+                            try IZumiPool(pool).limitOrderData(tick) returns (uint128 _sellingX, uint128, uint256, uint256, uint128, uint128 _sellingY, uint128, uint128, uint256, uint256) {
+                                sellingX = _sellingX;
+                                sellingY = _sellingY;
+                            } catch {
+                                revert("err_quoter_izumi_limitOrderData_failed");
+                            }
                             if (sellingX != 0 || sellingY != 0) {
                                 bytes32 data =
                                     bytes32(abi.encodePacked(int32(tick), uint112(sellingX), uint112(sellingY)));
@@ -109,7 +137,12 @@ library QueryIzumiSuperCompact {
         }
         bool isInitPoint = true;
         while (index < len && tmp.left > tmp.leftMost) {
-            uint256 res = IZumiPool(pool).pointBitmap(int16(tmp.left));
+            uint256 res;
+            try IZumiPool(pool).pointBitmap(int16(tmp.left)) returns (uint256 _res) {
+                res = _res;
+            } catch {
+                revert("err_quoter_izumi_pointBitmap_failed");
+            }
             if (res > 0 && tmp.initPoint2 != 0) {
                 res = isInitPoint ? res << ((256 - tmp.initPoint2) % 256) : res;
                 for (uint256 i = tmp.initPoint2 - 1; i >= 0 && index < len; i--) {
@@ -117,9 +150,19 @@ library QueryIzumiSuperCompact {
                     if (isInit > 0) {
                         int24 tick = int24(int256((256 * tmp.left + int256(i)) * tmp.tickSpacing));
 
-                        int24 orderOrEndpoint = IZumiPool(pool).orderOrEndpoint(tick / tmp.tickSpacing);
+                        int24 orderOrEndpoint;
+                        try IZumiPool(pool).orderOrEndpoint(tick / tmp.tickSpacing) returns (int24 _oe) {
+                            orderOrEndpoint = _oe;
+                        } catch {
+                            revert("err_quoter_izumi_orderOrEndpoint_failed");
+                        }
                         if (orderOrEndpoint & 0x01 == 0x01) {
-                            (, int128 liquidityNet,,,) = IZumiPool(pool).points(tick);
+                            int128 liquidityNet;
+                            try IZumiPool(pool).points(tick) returns (uint256, int128 _liquidityNet, uint256, uint256, bool) {
+                                liquidityNet = _liquidityNet;
+                            } catch {
+                                revert("err_quoter_izumi_points_failed");
+                            }
                             if (liquidityNet != 0) {
                                 int256 data = int256(uint256(int256(tick)) << 128)
                                     + (
@@ -134,7 +177,14 @@ library QueryIzumiSuperCompact {
                             }
                         }
                         if (orderOrEndpoint & 0x02 == 0x02) {
-                            (uint128 sellingX,,,,, uint128 sellingY,,,,) = IZumiPool(pool).limitOrderData(tick);
+                            uint128 sellingX;
+                            uint128 sellingY;
+                            try IZumiPool(pool).limitOrderData(tick) returns (uint128 _sellingX, uint128, uint256, uint256, uint128, uint128 _sellingY, uint128, uint128, uint256, uint256) {
+                                sellingX = _sellingX;
+                                sellingY = _sellingY;
+                            } catch {
+                                revert("err_quoter_izumi_limitOrderData_failed");
+                            }
                             if (sellingX != 0 || sellingY != 0) {
                                 bytes32 data =
                                     bytes32(abi.encodePacked(int32(tick), uint112(sellingX), uint112(sellingY)));

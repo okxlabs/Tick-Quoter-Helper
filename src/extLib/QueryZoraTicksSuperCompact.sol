@@ -32,14 +32,18 @@ library QueryZoraTicksSuperCompact {
         address STATE_VIEW
     ) public view returns (bytes memory) {
         SuperVar memory tmp;
-        IZoraCoin.PoolKey memory poolkey = IZoraCoin(coin).getPoolKey();
+        (bool gpkOk, bytes memory gpkData) = coin.staticcall(abi.encodeWithSelector(IZoraCoin.getPoolKey.selector));
+        require(gpkOk, "err_quoter_zora_getPoolKey_failed");
+        IZoraCoin.PoolKey memory poolkey = abi.decode(gpkData, (IZoraCoin.PoolKey));
         tmp.tickSpacing = poolkey.tickSpacing;
+        require(tmp.tickSpacing != 0, "err_quoter_zora_tickSpacing_zero");
         bytes32 poolId = toId(poolkey);
         IStateView.PoolId statePoolId = IStateView.PoolId.wrap(poolId);
 
         {
-            (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee) =
-                IStateView(STATE_VIEW).getSlot0(statePoolId);
+            (bool gs0Ok, bytes memory gs0Data) = STATE_VIEW.staticcall(abi.encodeWithSelector(IStateView.getSlot0.selector, statePoolId));
+            require(gs0Ok, "err_quoter_zora_getSlot0_failed");
+            (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee) = abi.decode(gs0Data, (uint160, int24, uint24, uint24));
             tmp.currTick = tick;
         }
 
@@ -63,7 +67,12 @@ library QueryZoraTicksSuperCompact {
         uint256 index = 0;
 
         while (index < len / 2 && tmp.right < tmp.rightMost) {
-            uint256 res = IStateView(STATE_VIEW).getTickBitmap(statePoolId, int16(tmp.right));
+            uint256 res;
+            try IStateView(STATE_VIEW).getTickBitmap(statePoolId, int16(tmp.right)) returns (uint256 _res) {
+                res = _res;
+            } catch {
+                revert("err_quoter_zora_getTickBitmap_failed");
+            }
             if (res > 0) {
                 res = res >> tmp.initPoint;
                 for (uint256 i = tmp.initPoint; i < 256 && index < len / 2; i++) {
@@ -71,8 +80,12 @@ library QueryZoraTicksSuperCompact {
                     if (isInit > 0) {
                         int256 tick = int256((256 * tmp.right + int256(i)) * tmp.tickSpacing);
 
-                        (uint128 liquidityGross, int128 liquidityNet) =
-                            IStateView(STATE_VIEW).getTickLiquidity(statePoolId, int24(int256(tick)));
+                        int128 liquidityNet;
+                        try IStateView(STATE_VIEW).getTickLiquidity(statePoolId, int24(int256(tick))) returns (uint128, int128 _liquidityNet) {
+                            liquidityNet = _liquidityNet;
+                        } catch {
+                            revert("err_quoter_zora_getTickLiquidity_failed");
+                        }
 
                         int256 data = int256(uint256(int256(tick)) << 128)
                             + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
@@ -93,7 +106,12 @@ library QueryZoraTicksSuperCompact {
 
         bool isInitPoint = true;
         while (index < len && tmp.left > tmp.leftMost) {
-            uint256 res = IStateView(STATE_VIEW).getTickBitmap(statePoolId, int16(tmp.left));
+            uint256 res;
+            try IStateView(STATE_VIEW).getTickBitmap(statePoolId, int16(tmp.left)) returns (uint256 _res) {
+                res = _res;
+            } catch {
+                revert("err_quoter_zora_getTickBitmap_failed");
+            }
             if (res > 0 && tmp.initPoint2 != 0) {
                 res = isInitPoint ? res << ((256 - tmp.initPoint2) % 256) : res;
                 for (uint256 i = tmp.initPoint2 - 1; i >= 0 && index < len; i--) {
@@ -101,8 +119,12 @@ library QueryZoraTicksSuperCompact {
                     if (isInit > 0) {
                         int256 tick = int256((256 * tmp.left + int256(i)) * tmp.tickSpacing);
 
-                        (uint128 liquidityGross, int128 liquidityNet) =
-                            IStateView(STATE_VIEW).getTickLiquidity(statePoolId, int24(int256(tick)));
+                        int128 liquidityNet;
+                        try IStateView(STATE_VIEW).getTickLiquidity(statePoolId, int24(int256(tick))) returns (uint128, int128 _liquidityNet) {
+                            liquidityNet = _liquidityNet;
+                        } catch {
+                            revert("err_quoter_zora_getTickLiquidity_failed");
+                        }
 
                         int256 data = int256(uint256(int256(tick)) << 128)
                             + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
@@ -143,7 +165,9 @@ library QueryZoraTicksSuperCompact {
         view
         returns (IZoraCoin.PoolKey memory)
     {
-        IZoraCoin.PoolKey memory poolKey = IZoraCoin(coin).getPoolKey();
+        (bool gpkzOk, bytes memory gpkzData) = coin.staticcall(abi.encodeWithSelector(IZoraCoin.getPoolKey.selector));
+        require(gpkzOk, "err_quoter_zora_getPoolKey_failed");
+        IZoraCoin.PoolKey memory poolKey = abi.decode(gpkzData, (IZoraCoin.PoolKey));
         return poolKey;
     }
 
@@ -153,10 +177,14 @@ library QueryZoraTicksSuperCompact {
         view
         returns (int256 liquidity, uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee)
     {
-        IZoraCoin.PoolKey memory poolKey = IZoraCoin(coin).getPoolKey();
+        (bool gpksOk, bytes memory gpksData) = coin.staticcall(abi.encodeWithSelector(IZoraCoin.getPoolKey.selector));
+        require(gpksOk, "err_quoter_zora_getPoolKey_failed");
+        IZoraCoin.PoolKey memory poolKey = abi.decode(gpksData, (IZoraCoin.PoolKey));
         bytes32 poolId = toId(poolKey);
         bytes32 slot = _getPoolStateSlot(poolId);
-        bytes32[] memory slot0 = IPoolManager(POOL_MANAGER).extsload(slot, 4);
+        (bool extOk, bytes memory extData) = POOL_MANAGER.staticcall(abi.encodeWithSelector(IPoolManager.extsload.selector, slot, 4));
+        require(extOk, "err_quoter_zora_extsload_failed");
+        bytes32[] memory slot0 = abi.decode(extData, (bytes32[]));
         bytes32 data = slot0[0];
         liquidity = int256(uint256(slot0[3]));
 

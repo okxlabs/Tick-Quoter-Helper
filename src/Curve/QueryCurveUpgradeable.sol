@@ -67,7 +67,7 @@ contract QueryCurveUpgradeable is UUPSUpgradeable {
     address public owner;
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "Callable only by owner");
+        require(msg.sender == owner, "err_quoter_curve_only_owner");
         _;
     }
 

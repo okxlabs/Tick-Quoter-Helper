@@ -104,14 +104,14 @@ contract QueryCurveUpgradeableBase is QueryCurveUpgradeableV2 {
     }
 
     function migrateLegacyStorage() external {
-        require(owner == address(0), "owner already migrated");
+        require(owner == address(0), "err_quoter_curve_owner_already_migrated");
 
         address legacyOwner = _legacyOwner();
         address legacyProvider = _legacyAddressProvider();
 
-        require(legacyOwner != address(0), "legacy owner missing");
-        require(legacyProvider != address(0), "legacy provider missing");
-        require(msg.sender == legacyOwner, "caller is not legacy owner");
+        require(legacyOwner != address(0), "err_quoter_curve_legacy_owner_missing");
+        require(legacyProvider != address(0), "err_quoter_curve_legacy_provider_missing");
+        require(msg.sender == legacyOwner, "err_quoter_curve_caller_not_legacy_owner");
 
         owner = legacyOwner;
         address_provider = legacyProvider;

@@ -48,11 +48,15 @@ library QueryFluidDexV2D3D4 {
     ) public view returns (uint256 exchangePricesAndConfig0_, uint256 exchangePricesAndConfig1_) {
         if (token0 != address(0)) {
             bytes32 slot = LSL.calculateMappingStorageSlot(LSL.LIQUIDITY_EXCHANGE_PRICES_MAPPING_SLOT, token0);
-            exchangePricesAndConfig0_ = IFluidLiquidity(liquidity).readFromStorage(slot);
+            (bool s1, bytes memory d1) = liquidity.staticcall(abi.encodeWithSelector(IFluidLiquidity.readFromStorage.selector, slot));
+            require(s1, "err_quoter_fluid_liquidity_readFromStorage_token0_failed");
+            exchangePricesAndConfig0_ = abi.decode(d1, (uint256));
         }
         if (token1 != address(0)) {
             bytes32 slot = LSL.calculateMappingStorageSlot(LSL.LIQUIDITY_EXCHANGE_PRICES_MAPPING_SLOT, token1);
-            exchangePricesAndConfig1_ = IFluidLiquidity(liquidity).readFromStorage(slot);
+            (bool s2, bytes memory d2) = liquidity.staticcall(abi.encodeWithSelector(IFluidLiquidity.readFromStorage.selector, slot));
+            require(s2, "err_quoter_fluid_liquidity_readFromStorage_token1_failed");
+            exchangePricesAndConfig1_ = abi.decode(d2, (uint256));
         }
     }
 
@@ -63,10 +67,11 @@ library QueryFluidDexV2D3D4 {
         uint24 tickSpacing,
         uint256 len
     ) public view returns (bytes memory) {
-        require(dexType == D3_DEX_TYPE || dexType == D4_DEX_TYPE, "Invalid dex type");
+        require(dexType == D3_DEX_TYPE || dexType == D4_DEX_TYPE, "err_quoter_fluid_invalid_dex_type");
 
         SuperVar memory tmp;
         tmp.tickSpacing = int24(tickSpacing);
+        require(tmp.tickSpacing != 0, "err_quoter_fluid_tickSpacing_zero");
         tmp.currTick = _getCurrentTick(fluidDexV2, dexType, dexId);
 
         // Calculate starting word/bit position aligned with Uniswap V3 TickBitmap.position().
@@ -157,8 +162,8 @@ library QueryFluidDexV2D3D4 {
         int16 startWordPos,
         int16 endWordPos
     ) public view returns (bytes memory) {
-        require(dexType == D3_DEX_TYPE || dexType == D4_DEX_TYPE, "Invalid dex type");
-        require(startWordPos <= endWordPos, "Invalid word position");
+        require(dexType == D3_DEX_TYPE || dexType == D4_DEX_TYPE, "err_quoter_fluid_invalid_dex_type");
+        require(startWordPos <= endWordPos, "err_quoter_fluid_invalid_word_position");
         
         int256 wordsSigned = int256(endWordPos) - int256(startWordPos) + 1;
         // Pre-allocate to avoid O(n^2) bytes.concat; we will trim to actual length before return.
@@ -185,7 +190,9 @@ library QueryFluidDexV2D3D4 {
         bytes32 dexId_
     ) internal view returns (int24) {
         bytes32 slot = DSL.calculateDoubleMappingStorageSlot(DSL.DEX_V2_VARIABLES_SLOT, bytes32(dexType_), dexId_);
-        uint256 dexVariablesPacked_ = IFluidDexV2(fluidDexV2_).readFromStorage(slot);
+        (bool s3, bytes memory d3) = fluidDexV2_.staticcall(abi.encodeWithSelector(IFluidDexV2.readFromStorage.selector, slot));
+        require(s3, "err_quoter_fluid_dexv2_readFromStorage_variables_failed");
+        uint256 dexVariablesPacked_ = abi.decode(d3, (uint256));
         int256 currentTick_ = int256((dexVariablesPacked_ >> DSL.BITS_DEX_V2_VARIABLES_ABSOLUTE_CURRENT_TICK) & X19);
         if ((dexVariablesPacked_ >> DSL.BITS_DEX_V2_VARIABLES_CURRENT_TICK_SIGN) & X1 == 0) {
             currentTick_ = -currentTick_;
@@ -200,12 +207,14 @@ library QueryFluidDexV2D3D4 {
         int16 wordPos_
     ) internal view returns (uint256) {
         bytes32 slot_ = DSL.calculateTripleMappingStorageSlot(
-            DSL.DEX_V2_TICK_BITMAP_MAPPING_SLOT, 
-            bytes32(dexType_), 
-            dexId_, 
+            DSL.DEX_V2_TICK_BITMAP_MAPPING_SLOT,
+            bytes32(dexType_),
+            dexId_,
             bytes32(uint256(int256(wordPos_)))
         );
-        return uint256(IFluidDexV2(fluidDexV2_).readFromStorage(slot_));
+        (bool s4, bytes memory d4) = fluidDexV2_.staticcall(abi.encodeWithSelector(IFluidDexV2.readFromStorage.selector, slot_));
+        require(s4, "err_quoter_fluid_dexv2_readFromStorage_tickBitmap_failed");
+        return abi.decode(d4, (uint256));
     }
 
     function _getTickLiquidityNet(
@@ -222,6 +231,8 @@ library QueryFluidDexV2D3D4 {
         );
         
         // liquidityNet is at baseSlot_ + 0
-        return int256(IFluidDexV2(fluidDexV2_).readFromStorage(baseSlot_));
+        (bool s5, bytes memory d5) = fluidDexV2_.staticcall(abi.encodeWithSelector(IFluidDexV2.readFromStorage.selector, baseSlot_));
+        require(s5, "err_quoter_fluid_dexv2_readFromStorage_tickLiquidityNet_failed");
+        return int256(abi.decode(d5, (uint256)));
     }
 }

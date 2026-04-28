@@ -36,7 +36,8 @@ library QueryAlgebraTicksSuperCompact {
         SuperVar memory tmp;
 
         {
-            (, bytes memory slot0) = pool.staticcall(abi.encodeWithSignature("globalState()"));
+            (bool success, bytes memory slot0) = pool.staticcall(abi.encodeWithSignature("globalState()"));
+            require(success, "err_quoter_algebra_globalState_failed");
             int24 currTick;
             assembly {
                 currTick := mload(add(slot0, 64))
@@ -61,7 +62,12 @@ library QueryAlgebraTicksSuperCompact {
         uint256 index = 0;
 
         while (index < len / 2 && tmp.right < tmp.rightMost) {
-            uint256 res = IAlgebraPoolV1_9(pool).tickTable(int16(tmp.right));
+            uint256 res;
+            try IAlgebraPoolV1_9(pool).tickTable(int16(tmp.right)) returns (uint256 _res) {
+                res = _res;
+            } catch {
+                revert("err_quoter_algebra_tickTable_failed");
+            }
             if (res > 0) {
                 res = res >> tmp.initPoint;
                 for (uint256 i = tmp.initPoint; i < 256 && index < len / 2; i++) {
@@ -69,7 +75,8 @@ library QueryAlgebraTicksSuperCompact {
                     if (isInit > 0) {
                         int256 tick = int256((256 * tmp.right + int256(i)));
                         // (, int128 liquidityNet,,,,,,) = IAlgebraPoolV1_9(pool).ticks(int24(int256(tick)));
-                        (, bytes memory deltaL) = pool.staticcall(abi.encodeWithSignature("ticks(int24)", tick));
+                        (bool s1, bytes memory deltaL) = pool.staticcall(abi.encodeWithSignature("ticks(int24)", tick));
+                        require(s1, "err_quoter_algebra_ticks_failed");
                         int128 liquidityNet;
                         assembly {
                             liquidityNet := mload(add(deltaL, 64))
@@ -93,7 +100,12 @@ library QueryAlgebraTicksSuperCompact {
         }
         bool isInitPoint = true;
         while (index < len && tmp.left > tmp.leftMost) {
-            uint256 res = IAlgebraPoolV1_9(pool).tickTable(int16(tmp.left));
+            uint256 res;
+            try IAlgebraPoolV1_9(pool).tickTable(int16(tmp.left)) returns (uint256 _res) {
+                res = _res;
+            } catch {
+                revert("err_quoter_algebra_tickTable_failed");
+            }
             if (res > 0 && tmp.initPoint2 != 0) {
                 res = isInitPoint ? res << ((256 - tmp.initPoint2) % 256) : res;
 
@@ -103,7 +115,8 @@ library QueryAlgebraTicksSuperCompact {
                         int256 tick = int256((256 * tmp.left + int256(i)));
                         // (, int128 liquidityNet,,,,,,) = IAlgebraPoolV1_9(pool).ticks(int24(int256(tick)));
 
-                        (, bytes memory deltaL) = pool.staticcall(abi.encodeWithSignature("ticks(int24)", tick));
+                        (bool s2, bytes memory deltaL) = pool.staticcall(abi.encodeWithSignature("ticks(int24)", tick));
+                        require(s2, "err_quoter_algebra_ticks_failed");
                         int128 liquidityNet;
                         assembly {
                             liquidityNet := mload(add(deltaL, 64))
@@ -159,7 +172,16 @@ library QueryAlgebraTicksSuperCompact {
         uint256 index = 0;
 
         while (currTick < MAX_TICK_PLUS_1 && iteration > threshold) {
-            (, int128 liquidityNet,,, int24 prevTick, int24 nextTick,,,) = IAlgebraPool(pool).ticks(currTick);
+            int128 liquidityNet;
+            int24 prevTick;
+            int24 nextTick;
+            try IAlgebraPool(pool).ticks(currTick) returns (uint128, int128 _liquidityNet, uint256, uint256, int24 _prevTick, int24 _nextTick, uint160, uint32, bool) {
+                liquidityNet = _liquidityNet;
+                prevTick = _prevTick;
+                nextTick = _nextTick;
+            } catch {
+                revert("err_quoter_algebra_ticks_failed");
+            }
 
             int256 data = int256(uint256(int256(currTick)) << 128)
                 + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
@@ -176,7 +198,16 @@ library QueryAlgebraTicksSuperCompact {
         }
 
         while (currTick2 > MIN_TICK_MINUS_1 && iteration > 0) {
-            (, int128 liquidityNet,,, int24 prevTick, int24 nextTick,,,) = IAlgebraPool(pool).ticks(currTick2);
+            int128 liquidityNet;
+            int24 prevTick;
+            int24 nextTick;
+            try IAlgebraPool(pool).ticks(currTick2) returns (uint128, int128 _liquidityNet, uint256, uint256, int24 _prevTick, int24 _nextTick, uint160, uint32, bool) {
+                liquidityNet = _liquidityNet;
+                prevTick = _prevTick;
+                nextTick = _nextTick;
+            } catch {
+                revert("err_quoter_algebra_ticks_failed");
+            }
 
             int256 data = int256(uint256(int256(currTick2)) << 128)
                 + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
@@ -227,7 +258,16 @@ library QueryAlgebraTicksSuperCompact {
         uint256 index = 0;
 
         while (currTick < MAX_TICK_PLUS_1 && iteration > threshold) {
-            (, int128 liquidityNet, int24 prevTick, int24 nextTick, , ) = IAlgebraPoolIntegral(pool).ticks(currTick);
+            int128 liquidityNet;
+            int24 prevTick;
+            int24 nextTick;
+            try IAlgebraPoolIntegral(pool).ticks(currTick) returns (uint256, int128 _liquidityNet, int24 _prevTick, int24 _nextTick, uint256, uint256) {
+                liquidityNet = _liquidityNet;
+                prevTick = _prevTick;
+                nextTick = _nextTick;
+            } catch {
+                revert("err_quoter_algebra_integral_ticks_failed");
+            }
 
             int256 data = int256(uint256(int256(currTick)) << 128)
                 + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
@@ -245,7 +285,12 @@ library QueryAlgebraTicksSuperCompact {
 
         // Skip initial tick (already processed above) by moving to prevTick first
         {
-            (, , int24 prevTick, , , ) = IAlgebraPoolIntegral(pool).ticks(currTick2);
+            int24 prevTick;
+            try IAlgebraPoolIntegral(pool).ticks(currTick2) returns (uint256, int128, int24 _prevTick, int24, uint256, uint256) {
+                prevTick = _prevTick;
+            } catch {
+                revert("err_quoter_algebra_integral_ticks_failed");
+            }
             // if the current tick is the same as the previous tick, means no more previous ticks to process, return the result
             if (currTick2 == prevTick) {
                 assembly {
@@ -257,7 +302,16 @@ library QueryAlgebraTicksSuperCompact {
         }
 
         while (currTick2 > MIN_TICK_MINUS_1 && iteration > 0) {
-            (, int128 liquidityNet, int24 prevTick, int24 nextTick, , ) = IAlgebraPoolIntegral(pool).ticks(currTick2);
+            int128 liquidityNet;
+            int24 prevTick;
+            int24 nextTick;
+            try IAlgebraPoolIntegral(pool).ticks(currTick2) returns (uint256, int128 _liquidityNet, int24 _prevTick, int24 _nextTick, uint256, uint256) {
+                liquidityNet = _liquidityNet;
+                prevTick = _prevTick;
+                nextTick = _nextTick;
+            } catch {
+                revert("err_quoter_algebra_integral_ticks_failed");
+            }
 
             int256 data = int256(uint256(int256(currTick2)) << 128)
                 + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
@@ -283,10 +337,18 @@ library QueryAlgebraTicksSuperCompact {
     /// @notice Algebra pools - tick bitmap query, dynamic tickSpacing, full range scan
     function queryAlgebraTicksSuperCompact3_back(address pool, uint256 len) public view returns (bytes memory) {
         SuperVar memory tmp;
-        tmp.tickSpacing = IAlgebraPool(pool).tickSpacing();
+        {
+            try IAlgebraPool(pool).tickSpacing() returns (int24 _tickSpacing) {
+                tmp.tickSpacing = _tickSpacing;
+            } catch {
+                revert("err_quoter_algebra_tickSpacing_failed");
+            }
+            require(tmp.tickSpacing != 0, "err_quoter_algebra_tickSpacing_zero");
+        }
 
         {
-            (, bytes memory slot0) = pool.staticcall(abi.encodeWithSignature("globalState()"));
+            (bool success, bytes memory slot0) = pool.staticcall(abi.encodeWithSignature("globalState()"));
+            require(success, "err_quoter_algebra_globalState_failed");
             int24 currTick;
             assembly {
                 currTick := mload(add(slot0, 64))
@@ -314,7 +376,12 @@ library QueryAlgebraTicksSuperCompact {
         uint256 index = 0;
 
         while (index < len / 2 && tmp.right < tmp.rightMost) {
-            uint256 res = IAlgebraPoolV1_9(pool).tickTable(int16(tmp.right));
+            uint256 res;
+            try IAlgebraPoolV1_9(pool).tickTable(int16(tmp.right)) returns (uint256 _res) {
+                res = _res;
+            } catch {
+                revert("err_quoter_algebra_tickTable_failed");
+            }
             if (res > 0) {
                 res = res >> tmp.initPoint;
                 for (uint256 i = tmp.initPoint; i < 256 && index < len / 2; i++) {
@@ -322,7 +389,8 @@ library QueryAlgebraTicksSuperCompact {
                     if (isInit > 0) {
                         int256 tick = int256((256 * tmp.right + int256(i)) * tmp.tickSpacing);
                         // (, int128 liquidityNet,,,,,,) = IAlgebraPoolV1_9(pool).ticks(int24(int256(tick)));
-                        (, bytes memory deltaL) = pool.staticcall(abi.encodeWithSignature("ticks(int24)", tick));
+                        (bool s3, bytes memory deltaL) = pool.staticcall(abi.encodeWithSignature("ticks(int24)", tick));
+                        require(s3, "err_quoter_algebra_ticks_failed");
                         int128 liquidityNet;
                         assembly {
                             liquidityNet := mload(add(deltaL, 64))
@@ -345,7 +413,12 @@ library QueryAlgebraTicksSuperCompact {
         }
         bool isInitPoint = true;
         while (index < len && tmp.left > tmp.leftMost) {
-            uint256 res = IAlgebraPoolV1_9(pool).tickTable(int16(tmp.left));
+            uint256 res;
+            try IAlgebraPoolV1_9(pool).tickTable(int16(tmp.left)) returns (uint256 _res) {
+                res = _res;
+            } catch {
+                revert("err_quoter_algebra_tickTable_failed");
+            }
             if (res > 0 && tmp.initPoint2 != 0) {
                 res = isInitPoint ? res << ((256 - tmp.initPoint2) % 256) : res;
 
@@ -355,7 +428,8 @@ library QueryAlgebraTicksSuperCompact {
                         int256 tick = int256((256 * tmp.left + int256(i)) * tmp.tickSpacing);
                         // (, int128 liquidityNet,,,,,,) = IAlgebraPoolV1_9(pool).ticks(int24(int256(tick)));
 
-                        (, bytes memory deltaL) = pool.staticcall(abi.encodeWithSignature("ticks(int24)", tick));
+                        (bool s4, bytes memory deltaL) = pool.staticcall(abi.encodeWithSignature("ticks(int24)", tick));
+                        require(s4, "err_quoter_algebra_ticks_failed");
                         int128 liquidityNet;
                         assembly {
                             liquidityNet := mload(add(deltaL, 64))
@@ -391,7 +465,8 @@ library QueryAlgebraTicksSuperCompact {
         tmp.tickSpacing = 1;
 
         {
-            (, bytes memory slot0) = pool.staticcall(abi.encodeWithSignature("globalState()"));
+            (bool success, bytes memory slot0) = pool.staticcall(abi.encodeWithSignature("globalState()"));
+            require(success, "err_quoter_algebra_globalState_failed");
             int24 currTick;
             assembly {
                 currTick := mload(add(slot0, 64))
@@ -420,7 +495,12 @@ library QueryAlgebraTicksSuperCompact {
         uint256 index = 0;
 
         while (index < len / 2 && tmp.right < tmp.rightMost) {
-            uint256 res = IAlgebraPoolV1_9(pool).tickTable(int16(tmp.right));
+            uint256 res;
+            try IAlgebraPoolV1_9(pool).tickTable(int16(tmp.right)) returns (uint256 _res) {
+                res = _res;
+            } catch {
+                revert("err_quoter_algebra_tickTable_failed");
+            }
             if (res > 0) {
                 res = res >> tmp.initPoint;
                 for (uint256 i = tmp.initPoint; i < 256 && index < len / 2; i++) {
@@ -428,7 +508,8 @@ library QueryAlgebraTicksSuperCompact {
                     if (isInit > 0) {
                         int256 tick = int256((256 * tmp.right + int256(i)) * tmp.tickSpacing);
                         // (, int128 liquidityNet,,,,,,) = IAlgebraPoolV1_9(pool).ticks(int24(int256(tick)));
-                        (, bytes memory deltaL) = pool.staticcall(abi.encodeWithSignature("ticks(int24)", tick));
+                        (bool s5, bytes memory deltaL) = pool.staticcall(abi.encodeWithSignature("ticks(int24)", tick));
+                        require(s5, "err_quoter_algebra_ticks_failed");
                         int128 liquidityNet;
                         assembly {
                             liquidityNet := mload(add(deltaL, 64))
@@ -451,7 +532,12 @@ library QueryAlgebraTicksSuperCompact {
         }
         bool isInitPoint = true;
         while (index < len && tmp.left > tmp.leftMost) {
-            uint256 res = IAlgebraPoolV1_9(pool).tickTable(int16(tmp.left));
+            uint256 res;
+            try IAlgebraPoolV1_9(pool).tickTable(int16(tmp.left)) returns (uint256 _res) {
+                res = _res;
+            } catch {
+                revert("err_quoter_algebra_tickTable_failed");
+            }
             if (res > 0 && tmp.initPoint2 != 0) {
                 res = isInitPoint ? res << ((256 - tmp.initPoint2) % 256) : res;
 
@@ -461,7 +547,8 @@ library QueryAlgebraTicksSuperCompact {
                         int256 tick = int256((256 * tmp.left + int256(i)) * tmp.tickSpacing);
                         // (, int128 liquidityNet,,,,,,) = IAlgebraPoolV1_9(pool).ticks(int24(int256(tick)));
 
-                        (, bytes memory deltaL) = pool.staticcall(abi.encodeWithSignature("ticks(int24)", tick));
+                        (bool s6, bytes memory deltaL) = pool.staticcall(abi.encodeWithSignature("ticks(int24)", tick));
+                        require(s6, "err_quoter_algebra_ticks_failed");
                         int128 liquidityNet;
                         assembly {
                             liquidityNet := mload(add(deltaL, 64))

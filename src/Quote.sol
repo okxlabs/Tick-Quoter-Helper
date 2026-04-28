@@ -19,7 +19,7 @@ import "./extLib/QueryFluidDexV2D3D4.sol";
 import "./extLib/QueryEkubo.sol";
 
 contract QueryData is OwnableUpgradeable {
-    string public constant VERSION = "1.0.0";
+    string public constant VERSION = "1.0.1";
     // Core contract addresses
     address public constant POOL_MANAGER = 0x28e2Ea090877bF75740558f6BFB36A5ffeE9e9dF;
     address public constant STATE_VIEW = 0xd13Dd3D6E93f276FAfc9Db9E6BB47C1180aeE0c4;

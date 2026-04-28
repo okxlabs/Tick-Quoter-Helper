@@ -88,7 +88,7 @@ contract CurveMetaRegistryAvalanche {
                 return register;
             }
         }
-        revert("no registry");
+        revert("err_quoter_curve_no_registry");
     }
 
     function pool_count() public view returns (uint256 totalCount) {
@@ -214,7 +214,7 @@ contract QueryCurveUpgradeableAvalanche is UUPSUpgradeable {
     address public meta_registry;
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "Callable only by owner");
+        require(msg.sender == owner, "err_quoter_curve_only_owner");
         _;
     }
 
