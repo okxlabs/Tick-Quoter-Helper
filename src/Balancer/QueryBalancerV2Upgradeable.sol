@@ -76,7 +76,7 @@ contract QueryBalancerV2Upgradeable is UUPSUpgradeable {
     }
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "Callable only by owner");
+        require(msg.sender == owner, "err_quoter_balancer_only_owner");
         _;
     }
 

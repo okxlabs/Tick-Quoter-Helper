@@ -28,7 +28,9 @@ library QueryHorizonTicksSuperCompact {
     }
 
     function queryHorizonTicksSuperCompact(address pool, uint256 len) public view returns (bytes memory) {
-        (,, int24 currTick,) = IHorizonPool(pool).getPoolState();
+        (bool gps, bytes memory gpsd) = pool.staticcall(abi.encodeWithSelector(IHorizonPool.getPoolState.selector));
+        require(gps, "err_quoter_horizon_getPoolState_failed");
+        (,, int24 currTick,) = abi.decode(gpsd, (uint160, int24, int24, bool));
         int24 currTick2 = currTick;
         uint256 threshold = len / 2;
 
@@ -38,7 +40,12 @@ library QueryHorizonTicksSuperCompact {
         uint256 index = 0;
 
         while (currTick < MAX_TICK_PLUS_1 && len > threshold) {
-            (, int128 liquidityNet,,) = IHorizonPool(pool).ticks(currTick);
+            int128 liquidityNet;
+            try IHorizonPool(pool).ticks(currTick) returns (uint128, int128 _liquidityNet, uint256, uint128) {
+                liquidityNet = _liquidityNet;
+            } catch {
+                revert("err_quoter_horizon_ticks_failed");
+            }
 
             int256 data = int256(uint256(int256(currTick)) << 128)
                 + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
@@ -46,7 +53,12 @@ library QueryHorizonTicksSuperCompact {
             assembly {
                 mstore(add(tickInfo, add(32, mul(index, 32))), data)
             }
-            (, int24 nextTick) = IHorizonPool(pool).initializedTicks(currTick);
+            int24 nextTick;
+            try IHorizonPool(pool).initializedTicks(currTick) returns (int24, int24 _nextTick) {
+                nextTick = _nextTick;
+            } catch {
+                revert("err_quoter_horizon_initializedTicks_failed");
+            }
             if (currTick == nextTick) {
                 break;
             }
@@ -56,14 +68,24 @@ library QueryHorizonTicksSuperCompact {
         }
 
         while (currTick2 > MIN_TICK_MINUS_1 && len > 0) {
-            (, int128 liquidityNet,,) = IHorizonPool(pool).ticks(currTick2);
+            int128 liquidityNet;
+            try IHorizonPool(pool).ticks(currTick2) returns (uint128, int128 _liquidityNet, uint256, uint128) {
+                liquidityNet = _liquidityNet;
+            } catch {
+                revert("err_quoter_horizon_ticks_failed");
+            }
             int256 data = int256(uint256(int256(currTick2)) << 128)
                 + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
             // Write packed bytes32 directly into the pre-allocated buffer.
             assembly {
                 mstore(add(tickInfo, add(32, mul(index, 32))), data)
             }
-            (int24 prevTick,) = IHorizonPool(pool).initializedTicks(currTick2);
+            int24 prevTick;
+            try IHorizonPool(pool).initializedTicks(currTick2) returns (int24 _prevTick, int24) {
+                prevTick = _prevTick;
+            } catch {
+                revert("err_quoter_horizon_initializedTicks_failed");
+            }
             if (prevTick == currTick2) {
                 break;
             }

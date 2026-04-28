@@ -48,14 +48,17 @@ library QueryFluidLite {
                 return DexKey(token0_, token1_, salt_);
             }
         }
-        revert("DexKey not found");
+        revert("err_quoter_fluid_lite_dexkey_not_found");
     }
 
     /// @notice Retrieves the center price for a given dexId.
     function getCenterPrice(address dex_, address deployerContract_, DexKey memory dexKey_) internal view returns (uint256 centerPrice_) {
         bytes8 dexId_ = bytes8(keccak256(abi.encode(dexKey_)));
         uint256 dexVariables_ = _readMappingStorage(dex_, DexLiteSlotsLink.DEX_LITE_DEX_VARIABLES_SLOT, dexId_);
-        centerPrice_ = ICenterPriceOfFluidLite(AddressCalcs.addressCalc(deployerContract_, ((dexVariables_ >> DexLiteSlotsLink.BITS_DEX_LITE_DEX_VARIABLES_CENTER_PRICE_CONTRACT_ADDRESS) & X19))).centerPrice(dexKey_.token0, dexKey_.token1);
+        address centerPriceAddr_ = AddressCalcs.addressCalc(deployerContract_, ((dexVariables_ >> DexLiteSlotsLink.BITS_DEX_LITE_DEX_VARIABLES_CENTER_PRICE_CONTRACT_ADDRESS) & X19));
+        (bool s1, bytes memory d1) = centerPriceAddr_.staticcall(abi.encodeWithSelector(ICenterPriceOfFluidLite.centerPrice.selector, dexKey_.token0, dexKey_.token1));
+        require(s1, "err_quoter_fluid_lite_centerPrice_failed");
+        centerPrice_ = abi.decode(d1, (uint256));
     }
 
     /// @notice Retrieves the shift status for a given dexId.
@@ -67,11 +70,15 @@ library QueryFluidLite {
     }
 
     function _readStorage(address dex_, uint256 slot_) internal view returns (uint256 value_) {
-        value_ = IFluidDexLite(dex_).readFromStorage(bytes32(slot_));
+        (bool s2, bytes memory d2) = dex_.staticcall(abi.encodeWithSelector(IFluidDexLite.readFromStorage.selector, bytes32(slot_)));
+        require(s2, "err_quoter_fluid_lite_readFromStorage_failed");
+        value_ = abi.decode(d2, (uint256));
     }
-    
+
     function _readMappingStorage(address dex_, uint256 baseSlot_, bytes8 key_) internal view returns (uint256 value_) {
         bytes32 slot_ = DexLiteSlotsLink.calculateMappingStorageSlot(baseSlot_, key_);
-        value_ = IFluidDexLite(dex_).readFromStorage(slot_);
+        (bool s3, bytes memory d3) = dex_.staticcall(abi.encodeWithSelector(IFluidDexLite.readFromStorage.selector, slot_));
+        require(s3, "err_quoter_fluid_lite_readFromStorage_mapping_failed");
+        value_ = abi.decode(d3, (uint256));
     }
 }

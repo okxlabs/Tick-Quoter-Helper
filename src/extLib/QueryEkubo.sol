@@ -379,7 +379,14 @@ library ExposedStorageLib {
             mstore(0, shl(224, 0x380eb4e0))
             mstore(4, slot)
 
-            if iszero(staticcall(gas(), target, 0, 36, 0, 32)) { revert(0, 0) }
+            if iszero(staticcall(gas(), target, 0, 36, 0, 32)) {
+                // "err_quoter_ekubo_sload_failed"
+                mstore(0, 0x08c379a000000000000000000000000000000000000000000000000000000000)
+                mstore(4, 0x20)
+                mstore(36, 29)
+                mstore(68, "err_quoter_ekubo_sload_failed")
+                revert(0, 100)
+            }
 
             result := mload(0)
         }
@@ -397,7 +404,14 @@ library ExposedStorageLib {
             mstore(add(o, 36), slot1)
             mstore(add(o, 68), slot2)
 
-            if iszero(staticcall(gas(), target, o, 100, o, 96)) { revert(0, 0) }
+            if iszero(staticcall(gas(), target, o, 100, o, 96)) {
+                // "err_quoter_ekubo_sload_failed"
+                mstore(0, 0x08c379a000000000000000000000000000000000000000000000000000000000)
+                mstore(4, 0x20)
+                mstore(36, 29)
+                mstore(68, "err_quoter_ekubo_sload_failed")
+                revert(0, 100)
+            }
 
             result0 := mload(o)
             result1 := mload(add(o, 32))
@@ -410,7 +424,14 @@ library ExposedStorageLib {
             mstore(0, shl(224, 0xed832830))
             mstore(4, slot)
 
-            if iszero(staticcall(gas(), target, 0, 36, 0, 32)) { revert(0, 0) }
+            if iszero(staticcall(gas(), target, 0, 36, 0, 32)) {
+                // "err_quoter_ekubo_tload_failed"
+                mstore(0, 0x08c379a000000000000000000000000000000000000000000000000000000000)
+                mstore(4, 0x20)
+                mstore(36, 29)
+                mstore(68, "err_quoter_ekubo_tload_failed")
+                revert(0, 100)
+            }
 
             result := mload(0)
         }
@@ -758,7 +779,7 @@ library QueryEkuboTicksSuperCompact {
     ) internal view returns (bytes memory) {
         ICore ekuboCore = ICore(payable(core));
         int32 tickSpacingVal = int32(poolKey.tickSpacing());
-        require(tickSpacingVal > 0, "Invalid tickSpacing");
+        require(tickSpacingVal > 0, "err_quoter_ekubo_invalid_tick_spacing");
         bytes32 poolId = poolKey.toPoolId();
 
         int32 compressedLeft = EKUBO_MIN_TICK / tickSpacingVal;
@@ -780,14 +801,14 @@ library QueryEkuboTicksSuperCompact {
 
         while (true) {
             int32 prevIndex = index;
-            (index, isInitialized) = ekuboCore.nextInitializedTick(
-                poolId,
-                index,
-                uint32(tickSpacingVal),
-                0
-            );
+            try ekuboCore.nextInitializedTick(poolId, index, uint32(tickSpacingVal), 0) returns (int32 _index, bool _isInitialized) {
+                index = _index;
+                isInitialized = _isInitialized;
+            } catch {
+                revert("err_quoter_ekubo_nextInitializedTick_failed");
+            }
             // Safety: index must strictly increase; otherwise we'd risk an infinite loop.
-            require(index > prevIndex, "Non-increasing index");
+            require(index > prevIndex, "err_quoter_ekubo_non_increasing_index");
 
             if (index >= rightMost) {
                 break;
