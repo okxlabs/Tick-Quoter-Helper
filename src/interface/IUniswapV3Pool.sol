@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.17;
+
 import "./IUniswapV3PoolImmutables.sol";
 import "./IUniswapV3PoolState.sol";
 /// @title The interface for a Uniswap V3 Pool

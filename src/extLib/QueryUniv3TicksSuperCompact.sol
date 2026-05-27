@@ -56,10 +56,16 @@ library QueryUniv3TicksSuperCompact {
 
     function queryUniv3TicksSuperCompact(address pool, uint256 len) public view returns (bytes memory) {
         SuperVar memory tmp;
-        tmp.tickSpacing = IUniswapV3Pool(pool).tickSpacing();
+        {
+            (bool ts, bytes memory tsd) = pool.staticcall(abi.encodeWithSelector(IUniswapV3PoolImmutables.tickSpacing.selector));
+            require(ts, "err_quoter_univ3_tickSpacing_failed");
+            tmp.tickSpacing = abi.decode(tsd, (int24));
+            require(tmp.tickSpacing != 0, "err_quoter_univ3_tickSpacing_zero");
+        }
         // fix-bug: pancake pool's slot returns different types of params than uniV3, which will cause problem
         {
-            (, bytes memory slot0) = pool.staticcall(abi.encodeWithSignature("slot0()"));
+            (bool success, bytes memory slot0) = pool.staticcall(abi.encodeWithSignature("slot0()"));
+            require(success, "err_quoter_univ3_slot0_failed");
             int24 currTick;
             assembly {
                 currTick := mload(add(slot0, 64))
@@ -88,7 +94,9 @@ library QueryUniv3TicksSuperCompact {
         uint256 index = 0;
 
         while (index < len / 2 && tmp.right < tmp.rightMost) {
-            uint256 res = IUniswapV3Pool(pool).tickBitmap(int16(tmp.right));
+            (bool tb1, bytes memory bd1) = pool.staticcall(abi.encodeWithSelector(IUniswapV3PoolState.tickBitmap.selector, int16(tmp.right)));
+            require(tb1, "err_quoter_univ3_tickBitmap_failed");
+            uint256 res = abi.decode(bd1, (uint256));
             if (res > 0) {
                 res = res >> tmp.initPoint;
                 for (uint256 i = tmp.initPoint; i < 256 && index < len / 2; i++) {
@@ -98,9 +106,10 @@ library QueryUniv3TicksSuperCompact {
                         // (, int128 liquidityNet,,,,,,) = IUniswapV3Pool(pool).ticks(int24(int256(tick)));
                         // fix-bug: to make consistent with solidlyV3 and ramsesV2
                         int128 liquidityNet;
-                        (, bytes memory d) = pool.staticcall(
+                        (bool s1, bytes memory d) = pool.staticcall(
                             abi.encodeWithSelector(IUniswapV3PoolState.ticks.selector, int24(int256(tick)))
                         );
+                        require(s1, "err_quoter_univ3_ticks_failed");
                         assembly {
                             liquidityNet := mload(add(d, 64))
                         }
@@ -122,7 +131,9 @@ library QueryUniv3TicksSuperCompact {
         }
         bool isInitPoint = true;
         while (index < len && tmp.left > tmp.leftMost) {
-            uint256 res = IUniswapV3Pool(pool).tickBitmap(int16(tmp.left));
+            (bool tb2, bytes memory bd2) = pool.staticcall(abi.encodeWithSelector(IUniswapV3PoolState.tickBitmap.selector, int16(tmp.left)));
+            require(tb2, "err_quoter_univ3_tickBitmap_failed");
+            uint256 res = abi.decode(bd2, (uint256));
             if (res > 0 && tmp.initPoint2 != 0) {
                 res = isInitPoint ? res << ((256 - tmp.initPoint2) % 256) : res;
                 for (uint256 i = tmp.initPoint2 - 1; i >= 0 && index < len; i--) {
@@ -132,9 +143,10 @@ library QueryUniv3TicksSuperCompact {
                         // (, int128 liquidityNet,,,,,,) = IUniswapV3Pool(pool).ticks(int24(int256(tick)));
                         // fix-bug: to make consistent with solidlyV3 and ramsesV2
                         int128 liquidityNet;
-                        (, bytes memory d) = pool.staticcall(
+                        (bool s2, bytes memory d) = pool.staticcall(
                             abi.encodeWithSelector(IUniswapV3PoolState.ticks.selector, int24(int256(tick)))
                         );
+                        require(s2, "err_quoter_univ3_ticks_failed");
                         assembly {
                             liquidityNet := mload(add(d, 64))
                         }

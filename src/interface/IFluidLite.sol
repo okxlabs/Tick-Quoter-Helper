@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.17;
+
 /// Copy from https://etherscan.io/address/0xBbcb91440523216e2b87052A99F69c604A7b6e00#code
 /// @notice library that helps in reading / working with storage slot data of Fluid Dex Lite.
 library DexLiteSlotsLink {

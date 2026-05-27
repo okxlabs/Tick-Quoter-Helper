@@ -1,56 +1,32 @@
 const fs = require('fs');
 const path = require('path');
+const { CHAINS, CHAIN_ALIASES, LIB_MAPPING } = require('./lib/chains');
 
 const BROADCAST_DIR = path.join(__dirname, '../broadcast');
 const DEPLOYED_DIR = path.join(__dirname, 'deployed');
 
-// Chain configurations
-const CHAINS = {
-  eth: { chainId: 1, verifierUrl: 'https://api.etherscan.io/v2/api?chainid=1', verifier: 'etherscan' },
-  bsc: { chainId: 56, verifierUrl: 'https://api.etherscan.io/v2/api?chainid=56', verifier: 'etherscan' },
-  monad: { chainId: 143, verifierUrl: 'https://sourcify-api-monad.blockvision.org/', verifier: 'sourcify' },
-  base: { chainId: 8453, verifierUrl: 'https://api.etherscan.io/v2/api?chainid=8453', verifier: 'etherscan' },
-  op: { chainId: 10, verifierUrl: 'https://api.etherscan.io/v2/api?chainid=10', verifier: 'etherscan' },
-  arb: { chainId: 42161, verifierUrl: 'https://api.etherscan.io/v2/api?chainid=42161', verifier: 'etherscan' },
-  polygon: { chainId: 137, verifierUrl: 'https://api.etherscan.io/v2/api?chainid=137', verifier: 'etherscan' },
-  blast: { chainId: 81457, verifierUrl: 'https://api.etherscan.io/v2/api?chainid=81457', verifier: 'etherscan' },
-  avax: { chainId: 43114, verifierUrl: 'https://api.etherscan.io/v2/api?chainid=43114', verifier: 'etherscan' },
-  unichain: { chainId: 130, verifierUrl: 'https://api.etherscan.io/v2/api?chainid=130', verifier: 'etherscan' },
-  xlayer: { chainId: 196, verifierUrl: 'https://www.oklink.com/api/v5/explorer/contract/verify-source-code-plugin/xlayer', verifier: 'oklink' },
-};
-
-const CHAIN_ALIASES = {
-  eth: 'eth', ethereum: 'eth',
-  bsc: 'bsc', bnb: 'bsc',
-  monad: 'monad',
-  base: 'base',
-  optimism: 'op', op: 'op',
-  arbitrum: 'arb', arb: 'arb',
-  polygon: 'polygon', matic: 'polygon',
-  blast: 'blast',
-  avax: 'avax', avalanche: 'avax',
-  unichain: 'unichain',
-  xlayer: 'xlayer',
-};
-
-// Library name mapping
-const LIB_MAPPING = {
-  QueryAlgebraTicksSuperCompact: 'src/extLib/QueryAlgebraTicksSuperCompact.sol:QueryAlgebraTicksSuperCompact',
-  QueryZoraTicksSuperCompact: 'src/extLib/QueryZoraTicksSuperCompact.sol:QueryZoraTicksSuperCompact',
-  QueryUniv4TicksSuperCompact: 'src/extLib/QueryUniv4TicksSuperCompact.sol:QueryUniv4TicksSuperCompact',
-  QueryUniv3TicksSuperCompact: 'src/extLib/QueryUniv3TicksSuperCompact.sol:QueryUniv3TicksSuperCompact',
-  QueryPancakeInfinityLBReserveSuperCompact: 'src/extLib/QueryPancakeInfinityLBReserveSuperCompact.sol:QueryPancakeInfinityLBReserveSuperCompact',
-  QueryIzumiSuperCompact: 'src/extLib/QueryIzumiSuperCompact.sol:QueryIzumiSuperCompact',
-  QueryHorizonTicksSuperCompact: 'src/extLib/QueryHorizonTicksSuperCompact.sol:QueryHorizonTicksSuperCompact',
-  QueryFluidLite: 'src/extLib/QueryFluidLite.sol:QueryFluidLite',
-  QueryFluid: 'src/extLib/QueryFluid.sol:QueryFluid',
-};
+// Max age for broadcast artifacts (default 30 minutes)
+const MAX_ARTIFACT_AGE_MS = 30 * 60 * 1000;
 
 function readBroadcast(scriptName, chainId) {
   const broadcastPath = path.join(BROADCAST_DIR, scriptName, String(chainId), 'run-latest.json');
   if (!fs.existsSync(broadcastPath)) {
     return null;
   }
+
+  // Check file modification time to detect stale artifacts
+  const stat = fs.statSync(broadcastPath);
+  const ageMs = Date.now() - stat.mtimeMs;
+  if (ageMs > MAX_ARTIFACT_AGE_MS) {
+    const ageMin = Math.round(ageMs / 60000);
+    const modTime = stat.mtime.toISOString().replace('T', ' ').slice(0, 19);
+    console.log(`Warning: Skipping stale broadcast artifact`);
+    console.log(`  File: ${broadcastPath}`);
+    console.log(`  Last modified: ${modTime} (${ageMin} minutes ago)`);
+    console.log('');
+    return null;
+  }
+
   return JSON.parse(fs.readFileSync(broadcastPath, 'utf8'));
 }
 
@@ -62,22 +38,39 @@ function extractAddresses(broadcast) {
     libraries: {},
   };
 
-  if (!broadcast || !broadcast.transactions) return addresses;
+  if (!broadcast) return addresses;
 
-  for (const tx of broadcast.transactions) {
-    if (!tx.contractName || !tx.contractAddress) continue;
-    
-    const name = tx.contractName;
-    const addr = tx.contractAddress;
+  // Extract from transactions
+  if (broadcast.transactions) {
+    for (const tx of broadcast.transactions) {
+      if (!tx.contractName || !tx.contractAddress) continue;
 
-    if (name === 'QueryData') {
-      addresses.implementation = addr;
-    } else if (name === 'TransparentUpgradeableProxy') {
-      addresses.proxy = addr;
-    } else if (name === 'ProxyAdmin') {
-      addresses.proxyAdmin = addr;
-    } else if (LIB_MAPPING[name]) {
-      addresses.libraries[name] = addr;
+      const name = tx.contractName;
+      const addr = tx.contractAddress;
+
+      if (name === 'QueryData') {
+        addresses.implementation = addr;
+      } else if (name === 'TransparentUpgradeableProxy') {
+        addresses.proxy = addr;
+      } else if (name === 'ProxyAdmin') {
+        addresses.proxyAdmin = addr;
+      } else if (LIB_MAPPING[name]) {
+        addresses.libraries[name] = addr;
+      }
+    }
+  }
+
+  // Extract from libraries array (format: "path:Name:address")
+  if (broadcast.libraries) {
+    for (const lib of broadcast.libraries) {
+      const parts = lib.split(':');
+      if (parts.length >= 3) {
+        const name = parts[parts.length - 2];
+        const addr = parts[parts.length - 1];
+        if (LIB_MAPPING[name]) {
+          addresses.libraries[name] = addr;
+        }
+      }
     }
   }
 
@@ -93,9 +86,17 @@ function updateIndexJs(chain, addresses) {
   }
 
   const config = require(indexPath);
-  
-  // Update addresses
-  if (addresses.implementation) config.implementation = addresses.implementation;
+
+  // Stage new implementation (don't touch implementation or history yet)
+  if (addresses.implementation) {
+    if (!config.implementation) {
+      // First-time deploy: write directly to implementation (no staging needed)
+      config.implementation = addresses.implementation;
+    } else if (addresses.implementation.toLowerCase() !== config.implementation.toLowerCase()) {
+      // Existing deployment: stage the new impl for later promotion via --promote
+      config.stagedImplementation = addresses.implementation;
+    }
+  }
   if (addresses.proxy) config.proxy = addresses.proxy;
   if (addresses.proxyAdmin) config.proxyAdmin = addresses.proxyAdmin;
   if (Object.keys(addresses.libraries).length > 0) {
@@ -186,6 +187,13 @@ function main() {
   // Read proxy deployment
   const proxyBroadcast = readBroadcast('DeployProxy.s.sol', chainConfig.chainId);
   const proxyAddresses = extractAddresses(proxyBroadcast);
+
+  // Fail if no fresh broadcast artifacts found at all
+  if (!implBroadcast && !proxyBroadcast) {
+    console.error('Error: No fresh broadcast artifacts found.');
+    console.error('Did you forget to run the broadcast command? Re-run with --broadcast and try again.');
+    process.exit(1);
+  }
 
   // Merge addresses
   const addresses = {

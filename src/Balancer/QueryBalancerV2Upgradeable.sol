@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -76,7 +76,7 @@ contract QueryBalancerV2Upgradeable is UUPSUpgradeable {
     }
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "Callable only by owner");
+        require(msg.sender == owner, "err_quoter_balancer_only_owner");
         _;
     }
 

@@ -67,7 +67,7 @@ contract QueryCurveUpgradeable is UUPSUpgradeable {
     address public owner;
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "Callable only by owner");
+        require(msg.sender == owner, "err_quoter_curve_only_owner");
         _;
     }
 
@@ -245,8 +245,8 @@ contract QueryCurveUpgradeableV2 is QueryCurveUpgradeable {
             try ICurveNGPool(pool).offpeg_fee_multiplier() returns (uint256 result1) {
                 gas_fee = result1;
                 name = 3;
-                try ICurveNGPool(pool).stored_rates() returns (uint256[] memory result1) {
-                    price_scale = result1;
+                try ICurveNGPool(pool).stored_rates() returns (uint256[] memory storedRates) {
+                    price_scale = storedRates;
                 } catch {
                     price_scale = new uint256[](n);
                 }

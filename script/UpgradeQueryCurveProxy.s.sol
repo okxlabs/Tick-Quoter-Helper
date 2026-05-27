@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import "forge-std/test.sol";
+import "forge-std/Script.sol";
 import {
     ERC1967Proxy
 } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
@@ -20,7 +20,7 @@ interface ICurveMetaRegister {
     function pool_list(uint256 _index) external view returns (address);
 }
 
-contract Deploy is Test {
+contract Deploy is Script {
     address deployer = vm.rememberKey(vm.envUint("PRIVATE_KEY"));
     address internal constant proxy =
         0x5B1cDde612852EC8eA070de3c29CF0c9f0E6700B;

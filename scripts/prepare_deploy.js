@@ -5,6 +5,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { CHAIN_ALIASES } = require('./lib/chains');
 
 const QUOTE_SOL_PATH = path.join(__dirname, '../src/Quote.sol');
 const DEPLOYED_DIR = path.join(__dirname, 'deployed');
@@ -25,12 +26,12 @@ function toChecksumAddress(address) {
   if (!address || address === '0x0000000000000000000000000000000000000000') {
     return '0x0000000000000000000000000000000000000000';
   }
-  
+
   if (getAddressFn) {
     // Convert to lowercase first to avoid checksum validation error
     return getAddressFn(address.toLowerCase());
   }
-  
+
   // Fallback: normalize to lowercase.
   const addr = address.replace(/^0x/i, '');
   if (addr.length !== 40) {
@@ -41,27 +42,6 @@ function toChecksumAddress(address) {
   console.warn('Warning: ethers not found; using lowercase address normalization (no EIP-55 checksum).');
   return normalized;
 }
-
-// Supported chains
-const CHAIN_ALIASES = {
-  eth: 'eth',
-  ethereum: 'eth',
-  bsc: 'bsc',
-  bnb: 'bsc',
-  monad: 'monad',
-  base: 'base',
-  optimism: 'op',
-  op: 'op',
-  arbitrum: 'arb',
-  arb: 'arb',
-  polygon: 'polygon',
-  matic: 'polygon',
-  blast: 'blast',
-  avax: 'avax',
-  avalanche: 'avax',
-  unichain: 'unichain',
-  xlayer: 'xlayer',
-};
 
 
 function main() {
@@ -104,6 +84,7 @@ function main() {
   const fluidLiteDeployer = toChecksumAddress(config.fluidLite?.deployerContract || '0x0000000000000000000000000000000000000000');
   const fluidLiquidity = toChecksumAddress(config.fluid?.liquidity || '0x0000000000000000000000000000000000000000');
   const fluidDexV2 = toChecksumAddress(config.fluid?.dexV2 || '0x0000000000000000000000000000000000000000');
+  const ekuboCore = toChecksumAddress(config.ekubo?.core || '0x0000000000000000000000000000000000000000');
 
   console.log(`Preparing Quote.sol for ${chain.toUpperCase()} (Chain ID: ${config.chainId})`);
   console.log('');
@@ -115,6 +96,7 @@ function main() {
   console.log(`  FLUID_LITE_DEPLOYER_CONTRACT:  ${fluidLiteDeployer}`);
   console.log(`  FLUID_LIQUIDITY:               ${fluidLiquidity}`);
   console.log(`  FLUID_DEX_V2:                  ${fluidDexV2}`);
+  console.log(`  EKUBO_CORE:                    ${ekuboCore}`);
   console.log('');
 
   // Read Quote.sol
@@ -154,6 +136,11 @@ function main() {
   content = content.replace(
     /address public constant FLUID_DEX_V2 = 0x[a-fA-F0-9]{40};/,
     `address public constant FLUID_DEX_V2 = ${fluidDexV2};`
+  );
+
+  content = content.replace(
+    /address public constant EKUBO_CORE = 0x[a-fA-F0-9]{40};/,
+    `address public constant EKUBO_CORE = ${ekuboCore};`
   );
 
   // Write back

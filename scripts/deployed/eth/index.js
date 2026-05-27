@@ -1,8 +1,9 @@
 module.exports = {
   chainId: 1,
+  version: "1.0.0",
   proxy: "0xCC4739736420c1D6F3F5Dbb53CD52E4AC0d06c9A",
   proxyAdmin: "0xb18792Ba1dbd677EB300660304E9E71E372DA421",
-  implementation: "0x479b3862531135e4D4b9466EBdcfE4974FF16f94",
+  implementation: "0xee9AD4812cf87B500f689217BF1996ECE3284Fd9",
   libraries: {
     QueryAlgebraTicksSuperCompact: "0x8D5f9AD9ee9BE8872189b169cB0FD8f4f4880f7f",
     QueryZoraTicksSuperCompact: "0x4D5340460e31118c33e905Fb1625a79a0a52a89a",
@@ -13,18 +14,21 @@ module.exports = {
     QueryHorizonTicksSuperCompact: "0xb9C0032364D5e63CeD45Eea0f7Df189d2758B36f",
     QueryFluidLite: "0x79C0F5f39b7e96430a68f605218A1B6c461e87f5",
     QueryFluid: "0x8FC9B0305619b84d5272c3349Fa9eF8b4F97EAe1",
+    QueryFluidDexV2D3D4: "0x37ee4131eca92D4986B94C31326556d4F994Dc17"
   },
   uniswapV4: {
     poolManager: "0x000000000004444c5dc75cB358380D2e3dE08A90",
     stateView: "0x7fFE42C4a5DEeA5b0feC41C94C136Cf115597227",
-    positionManager: "0xbD216513d74C8cf14cf4747E6AaA6420FF64ee9e",
+    positionManager: "0xbD216513d74C8cf14cf4747E6AaA6420FF64ee9e"
   },
   fluidLite: {
     dex: "0xBbcb91440523216e2b87052A99F69c604A7b6e00",
-    deployerContract: "0x4EC7b668BAF70d4A4b0FC7941a7708A07b6d45Be",
+    deployerContract: "0x4EC7b668BAF70d4A4b0FC7941a7708A07b6d45Be"
   },
-  fluid: {
-    liquidity: "0x0000000000000000000000000000000000000000",
-    dexV2: "0x0000000000000000000000000000000000000000",
+  ekubo: {
+    core: "0xe0e0e08A6A4b9Dc7bD67BCB7aadE5cF48157d444"
   },
+  implementationHistory: [
+    "0x479b3862531135e4D4b9466EBdcfE4974FF16f94"
+  ]
 };

@@ -73,8 +73,8 @@ contract DeployQueryCurveProxy is DeployQueryCurveUpgradeable {
 
     function run() public override {
         if (implementation.code.length == 0) {
-            address newImplementaion = deployQueryCurveUpgradeable();
-            assert(implementation == newImplementaion);
+            address newImplementation = deployQueryCurveUpgradeable();
+            assert(implementation == newImplementation);
         }
         console.log("start deply ERC1967Proxy:");
         bytes memory bytecode = type(ERC1967Proxy).creationCode;

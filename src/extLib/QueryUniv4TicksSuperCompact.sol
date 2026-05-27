@@ -70,14 +70,18 @@ library QueryUniv4TicksSuperCompact {
         address POSITION_MANAGER
     ) public view returns (bytes memory) {
         SuperVar memory tmp;
-        IPositionManager.PoolKey memory poolkey = IPositionManager(POSITION_MANAGER).poolKeys(bytes25(poolId));
+        (bool pk, bytes memory pkd) = POSITION_MANAGER.staticcall(abi.encodeWithSelector(IPositionManager.poolKeys.selector, bytes25(poolId)));
+        require(pk, "err_quoter_univ4_poolKeys_failed");
+        IPositionManager.PoolKey memory poolkey = abi.decode(pkd, (IPositionManager.PoolKey));
         tmp.tickSpacing = poolkey.tickSpacing;
+        require(tmp.tickSpacing != 0, "err_quoter_univ4_tickSpacing_zero");
 
         IStateView.PoolId statePoolId = IStateView.PoolId.wrap(poolId);
 
         {
-            (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee) =
-                IStateView(STATE_VIEW).getSlot0(statePoolId);
+            (bool gs, bytes memory gsd) = STATE_VIEW.staticcall(abi.encodeWithSelector(IStateView.getSlot0.selector, statePoolId));
+            require(gs, "err_quoter_univ4_getSlot0_failed");
+            (, int24 tick,,) = abi.decode(gsd, (uint160, int24, uint24, uint24));
             tmp.currTick = tick;
         }
 
@@ -101,7 +105,12 @@ library QueryUniv4TicksSuperCompact {
         uint256 index = 0;
 
         while (index < len / 2 && tmp.right < tmp.rightMost) {
-            uint256 res = IStateView(STATE_VIEW).getTickBitmap(statePoolId, int16(tmp.right));
+            uint256 res;
+            try IStateView(STATE_VIEW).getTickBitmap(statePoolId, int16(tmp.right)) returns (uint256 _res) {
+                res = _res;
+            } catch {
+                revert("err_quoter_univ4_getTickBitmap_failed");
+            }
             if (res > 0) {
                 res = res >> tmp.initPoint;
                 for (uint256 i = tmp.initPoint; i < 256 && index < len / 2; i++) {
@@ -109,8 +118,12 @@ library QueryUniv4TicksSuperCompact {
                     if (isInit > 0) {
                         int256 tick = int256((256 * tmp.right + int256(i)) * tmp.tickSpacing);
 
-                        (uint128 liquidityGross, int128 liquidityNet) =
-                            IStateView(STATE_VIEW).getTickLiquidity(statePoolId, int24(int256(tick)));
+                        int128 liquidityNet;
+                        try IStateView(STATE_VIEW).getTickLiquidity(statePoolId, int24(int256(tick))) returns (uint128, int128 _liquidityNet) {
+                            liquidityNet = _liquidityNet;
+                        } catch {
+                            revert("err_quoter_univ4_getTickLiquidity_failed");
+                        }
 
                         int256 data = int256(uint256(int256(tick)) << 128)
                             + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
@@ -131,7 +144,12 @@ library QueryUniv4TicksSuperCompact {
 
         bool isInitPoint = true;
         while (index < len && tmp.left > tmp.leftMost) {
-            uint256 res = IStateView(STATE_VIEW).getTickBitmap(statePoolId, int16(tmp.left));
+            uint256 res;
+            try IStateView(STATE_VIEW).getTickBitmap(statePoolId, int16(tmp.left)) returns (uint256 _res) {
+                res = _res;
+            } catch {
+                revert("err_quoter_univ4_getTickBitmap_failed");
+            }
             if (res > 0 && tmp.initPoint2 != 0) {
                 res = isInitPoint ? res << ((256 - tmp.initPoint2) % 256) : res;
                 for (uint256 i = tmp.initPoint2 - 1; i >= 0 && index < len; i--) {
@@ -139,8 +157,12 @@ library QueryUniv4TicksSuperCompact {
                     if (isInit > 0) {
                         int256 tick = int256((256 * tmp.left + int256(i)) * tmp.tickSpacing);
 
-                        (uint128 liquidityGross, int128 liquidityNet) =
-                            IStateView(STATE_VIEW).getTickLiquidity(statePoolId, int24(int256(tick)));
+                        int128 liquidityNet;
+                        try IStateView(STATE_VIEW).getTickLiquidity(statePoolId, int24(int256(tick))) returns (uint128, int128 _liquidityNet) {
+                            liquidityNet = _liquidityNet;
+                        } catch {
+                            revert("err_quoter_univ4_getTickLiquidity_failed");
+                        }
 
                         int256 data = int256(uint256(int256(tick)) << 128)
                             + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
@@ -175,12 +197,14 @@ library QueryUniv4TicksSuperCompact {
     ) public view returns (bytes memory) {
         SuperVar memory tmp;
         tmp.tickSpacing = poolkey.tickSpacing;
+        require(tmp.tickSpacing != 0, "err_quoter_univ4_tickSpacing_zero");
 
         IStateView.PoolId statePoolId = IStateView.PoolId.wrap(poolId);
 
         {
-            (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee) =
-                IStateView(STATE_VIEW).getSlot0(statePoolId);
+            (bool gs0, bytes memory gsd0) = STATE_VIEW.staticcall(abi.encodeWithSelector(IStateView.getSlot0.selector, statePoolId));
+            require(gs0, "err_quoter_univ4_getSlot0_failed");
+            (, int24 tick,,) = abi.decode(gsd0, (uint160, int24, uint24, uint24));
             tmp.currTick = tick;
         }
 
@@ -203,7 +227,12 @@ library QueryUniv4TicksSuperCompact {
         uint256 index = 0;
 
         while (index < len / 2 && tmp.right < tmp.rightMost) {
-            uint256 res = IStateView(STATE_VIEW).getTickBitmap(statePoolId, int16(tmp.right));
+            uint256 res;
+            try IStateView(STATE_VIEW).getTickBitmap(statePoolId, int16(tmp.right)) returns (uint256 _res) {
+                res = _res;
+            } catch {
+                revert("err_quoter_univ4_getTickBitmap_failed");
+            }
             if (res > 0) {
                 res = res >> tmp.initPoint;
                 for (uint256 i = tmp.initPoint; i < 256 && index < len / 2; i++) {
@@ -211,8 +240,12 @@ library QueryUniv4TicksSuperCompact {
                     if (isInit > 0) {
                         int256 tick = int256((256 * tmp.right + int256(i)) * tmp.tickSpacing);
 
-                        (uint128 liquidityGross, int128 liquidityNet) =
-                            IStateView(STATE_VIEW).getTickLiquidity(statePoolId, int24(int256(tick)));
+                        int128 liquidityNet;
+                        try IStateView(STATE_VIEW).getTickLiquidity(statePoolId, int24(int256(tick))) returns (uint128, int128 _liquidityNet) {
+                            liquidityNet = _liquidityNet;
+                        } catch {
+                            revert("err_quoter_univ4_getTickLiquidity_failed");
+                        }
 
                         int256 data = int256(uint256(int256(tick)) << 128)
                             + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
@@ -233,7 +266,12 @@ library QueryUniv4TicksSuperCompact {
 
         bool isInitPoint = true;
         while (index < len && tmp.left > tmp.leftMost) {
-            uint256 res = IStateView(STATE_VIEW).getTickBitmap(statePoolId, int16(tmp.left));
+            uint256 res;
+            try IStateView(STATE_VIEW).getTickBitmap(statePoolId, int16(tmp.left)) returns (uint256 _res) {
+                res = _res;
+            } catch {
+                revert("err_quoter_univ4_getTickBitmap_failed");
+            }
             if (res > 0 && tmp.initPoint2 != 0) {
                 res = isInitPoint ? res << ((256 - tmp.initPoint2) % 256) : res;
                 for (uint256 i = tmp.initPoint2 - 1; i >= 0 && index < len; i--) {
@@ -241,8 +279,12 @@ library QueryUniv4TicksSuperCompact {
                     if (isInit > 0) {
                         int256 tick = int256((256 * tmp.left + int256(i)) * tmp.tickSpacing);
 
-                        (uint128 liquidityGross, int128 liquidityNet) =
-                            IStateView(STATE_VIEW).getTickLiquidity(statePoolId, int24(int256(tick)));
+                        int128 liquidityNet;
+                        try IStateView(STATE_VIEW).getTickLiquidity(statePoolId, int24(int256(tick))) returns (uint128, int128 _liquidityNet) {
+                            liquidityNet = _liquidityNet;
+                        } catch {
+                            revert("err_quoter_univ4_getTickLiquidity_failed");
+                        }
 
                         int256 data = int256(uint256(int256(tick)) << 128)
                             + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
@@ -273,25 +315,48 @@ library QueryUniv4TicksSuperCompact {
         bytes32 poolId,
         uint256 len
     ) public view returns (bytes memory) {
-        SuperVar memory tmp;
-
+        int24 tickSpacing;
         {
-            (, bytes memory result) = PANCAKE_INFINITY_POSITION_MANAGER.staticcall(
+            (bool success, bytes memory result) = PANCAKE_INFINITY_POSITION_MANAGER.staticcall(
                 abi.encodeWithSignature("poolKeys(bytes25)", bytes25(poolId))
             );
+            require(success, "err_quoter_pancake_infinity_poolKeys_failed");
             bytes32 parameters;
             assembly {
-                // Skip currency0 (32), currency1 (32), hooks (32), poolManager (32), fee (32)
-                // Parameters is at offset 160 (32 * 5)
+                // bytes memory length prefix (32) + currency0 (32) + currency1 (32) + hooks (32) + poolManager (32) + fee (32)
+                // Parameters is at offset 192 (32 * 6)
                 parameters := mload(add(result, 192))
             }
-            tmp.tickSpacing = getTickSpacing(parameters);
+            tickSpacing = getTickSpacing(parameters);
+            require(tickSpacing != 0, "err_quoter_pancake_infinity_tickSpacing_zero");
         }
+        return _queryPancakeInfinityTicksInternal(poolId, tickSpacing, len);
+    }
+
+    function queryPancakeInfinityTicksSuperCompactByPoolKey(
+        ICLPoolManager.PoolKey calldata poolKey,
+        uint256 len
+    ) public view returns (bytes memory) {
+        int24 tickSpacing = getTickSpacing(poolKey.parameters);
+        require(tickSpacing != 0, "err_quoter_pancake_infinity_tickSpacing_zero");
+        bytes32 poolId = keccak256(abi.encode(poolKey));
+        return _queryPancakeInfinityTicksInternal(poolId, tickSpacing, len);
+    }
+
+    function _queryPancakeInfinityTicksInternal(
+        bytes32 poolId,
+        int24 tickSpacing,
+        uint256 len
+    ) private view returns (bytes memory) {
+        SuperVar memory tmp;
+        tmp.tickSpacing = tickSpacing;
 
         ICLPoolManager.PoolId clPoolId = ICLPoolManager.PoolId.wrap(poolId);
 
         {
-            (, int24 tick,,) = ICLPoolManager(PANCAKE_INFINITY_CLPOOLMANAGER).getSlot0(clPoolId);
+            (bool pgs, bytes memory pgsd) = PANCAKE_INFINITY_CLPOOLMANAGER.staticcall(abi.encodeWithSelector(ICLPoolManager.getSlot0.selector, clPoolId));
+            require(pgs, "err_quoter_pancake_infinity_getSlot0_failed");
+            (, int24 tick,,) = abi.decode(pgsd, (uint160, int24, uint24, uint24));
             tmp.currTick = tick;
         }
 
@@ -314,7 +379,12 @@ library QueryUniv4TicksSuperCompact {
         uint256 index = 0;
 
         while (index < len / 2 && tmp.right < tmp.rightMost) {
-            uint256 res = ICLPoolManager(PANCAKE_INFINITY_CLPOOLMANAGER).getPoolBitmapInfo(clPoolId, int16(tmp.right));
+            uint256 res;
+            try ICLPoolManager(PANCAKE_INFINITY_CLPOOLMANAGER).getPoolBitmapInfo(clPoolId, int16(tmp.right)) returns (uint256 _res) {
+                res = _res;
+            } catch {
+                revert("err_quoter_pancake_infinity_getPoolBitmapInfo_failed");
+            }
             if (res > 0) {
                 res = res >> tmp.initPoint;
                 for (uint256 i = tmp.initPoint; i < 256 && index < len / 2; i++) {
@@ -322,19 +392,20 @@ library QueryUniv4TicksSuperCompact {
                     if (isInit > 0) {
                         int256 tick = int256((256 * tmp.right + int256(i)) * tmp.tickSpacing);
 
-                        Tick.Info memory tickInfo_ = ICLPoolManager(PANCAKE_INFINITY_CLPOOLMANAGER).getPoolTickInfo(
-                            clPoolId, int24(int256(tick))
-                        );
-                        int128 liquidityNet = tickInfo_.liquidityNet;
+                        try ICLPoolManager(PANCAKE_INFINITY_CLPOOLMANAGER).getPoolTickInfo(clPoolId, int24(int256(tick))) returns (Tick.Info memory tickInfo_) {
+                            int128 liquidityNet = tickInfo_.liquidityNet;
 
-                        int256 data = int256(uint256(int256(tick)) << 128)
-                            + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
-                        // Write packed bytes32 directly into the pre-allocated buffer.
-                        assembly {
-                            mstore(add(tickInfo, add(32, mul(index, 32))), data)
+                            int256 data = int256(uint256(int256(tick)) << 128)
+                                + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
+                            // Write packed bytes32 directly into the pre-allocated buffer.
+                            assembly {
+                                mstore(add(tickInfo, add(32, mul(index, 32))), data)
+                            }
+
+                            index++;
+                        } catch {
+                            revert("err_quoter_pancake_infinity_getPoolTickInfo_failed");
                         }
-
-                        index++;
                     }
 
                     res = res >> 1;
@@ -346,7 +417,12 @@ library QueryUniv4TicksSuperCompact {
 
         bool isInitPoint = true;
         while (index < len && tmp.left > tmp.leftMost) {
-            uint256 res = ICLPoolManager(PANCAKE_INFINITY_CLPOOLMANAGER).getPoolBitmapInfo(clPoolId, int16(tmp.left));
+            uint256 res;
+            try ICLPoolManager(PANCAKE_INFINITY_CLPOOLMANAGER).getPoolBitmapInfo(clPoolId, int16(tmp.left)) returns (uint256 _res) {
+                res = _res;
+            } catch {
+                revert("err_quoter_pancake_infinity_getPoolBitmapInfo_failed");
+            }
             if (res > 0 && tmp.initPoint2 != 0) {
                 res = isInitPoint ? res << ((256 - tmp.initPoint2) % 256) : res;
                 for (uint256 i = tmp.initPoint2 - 1; i >= 0 && index < len; i--) {
@@ -354,19 +430,20 @@ library QueryUniv4TicksSuperCompact {
                     if (isInit > 0) {
                         int256 tick = int256((256 * tmp.left + int256(i)) * tmp.tickSpacing);
 
-                        Tick.Info memory tickInfo_ = ICLPoolManager(PANCAKE_INFINITY_CLPOOLMANAGER).getPoolTickInfo(
-                            clPoolId, int24(int256(tick))
-                        );
-                        int128 liquidityNet = tickInfo_.liquidityNet;
+                        try ICLPoolManager(PANCAKE_INFINITY_CLPOOLMANAGER).getPoolTickInfo(clPoolId, int24(int256(tick))) returns (Tick.Info memory tickInfo_) {
+                            int128 liquidityNet = tickInfo_.liquidityNet;
 
-                        int256 data = int256(uint256(int256(tick)) << 128)
-                            + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
-                        // Write packed bytes32 directly into the pre-allocated buffer.
-                        assembly {
-                            mstore(add(tickInfo, add(32, mul(index, 32))), data)
+                            int256 data = int256(uint256(int256(tick)) << 128)
+                                + (int256(liquidityNet) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff);
+                            // Write packed bytes32 directly into the pre-allocated buffer.
+                            assembly {
+                                mstore(add(tickInfo, add(32, mul(index, 32))), data)
+                            }
+
+                            index++;
+                        } catch {
+                            revert("err_quoter_pancake_infinity_getPoolTickInfo_failed");
                         }
-
-                        index++;
                     }
 
                     res = res << 1;
